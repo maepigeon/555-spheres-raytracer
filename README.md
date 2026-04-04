@@ -1,4 +1,4 @@
-// Ingo Wald's SIGGRAPH optix course used as a starting point https://github.com/ingowald/optix7course
+ Ingo Wald's SIGGRAPH optix course used as a starting point https://github.com/ingowald/optix7course
 
 I have the following at the end of my path:
     export PATH=/usr/local/cuda/bin:$PATH
