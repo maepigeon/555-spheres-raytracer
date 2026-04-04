@@ -1,7 +1,7 @@
 #include "SphereRenderer.h"
 #include <optix_function_table_definition.h>
 
-namespace osc {
+namespace spt {
 
 extern "C" char devicePrograms_ptx[];
 
@@ -42,7 +42,7 @@ SampleRenderer::SampleRenderer(const std::vector<Sphere> &spheres)
 OptixTraversableHandle SampleRenderer::buildAccel(const std::vector<Sphere> &spheres)
 {
   std::vector<OptixAabb> aabbs;
-  for (auto &s : spheres) {
+  for (const Sphere& s : spheres) {
     OptixAabb aabb;
     aabb.minX = s.center.x - s.radius;
     aabb.minY = s.center.y - s.radius;
@@ -277,25 +277,25 @@ void SampleRenderer::buildSBT() {
     missRecords.push_back(rec);
   }
   missRecordsBuffer.alloc_and_upload(missRecords);
-  sbt.missRecordBase          = missRecordsBuffer.d_pointer();
+  sbt.missRecordBase = missRecordsBuffer.d_pointer();
   sbt.missRecordStrideInBytes = sizeof(MissRecord);
-  sbt.missRecordCount         = (int)missRecords.size();
+  sbt.missRecordCount = (int)missRecords.size();
 
   std::vector<HitgroupRecord> hitgroupRecords;
-  for (auto &s : spheres) {
+  for (Sphere& s : spheres) {
     HitgroupRecord rec;
     OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-    rec.data.color        = s.color;
-    rec.data.roughness    = s.roughness;
-    rec.data.reflectivity = s.reflectivity;
-    rec.data.center       = s.center;
-    rec.data.radius       = s.radius;
+    rec.data.color = s.color;
+    rec.data.center = s.center;
+    rec.data.radius = s.radius;
+    rec.data.emissionColor = s.emissionColor;
+    rec.data.emissiveStrength = s.emissiveStrength;
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
-  sbt.hitgroupRecordBase          = hitgroupRecordsBuffer.d_pointer();
+  sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
   sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
-  sbt.hitgroupRecordCount         = (int)hitgroupRecords.size();
+  sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
 
@@ -321,11 +321,11 @@ void SampleRenderer::setCamera(const Camera &camera) {
   launchParams.camera.direction = normalize(camera.lookAt - camera.position);
   const float cosFovy = 0.66f;
   const float aspect  = launchParams.frame.size.x / float(launchParams.frame.size.y);
-  launchParams.camera.horizontal
-    = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.sceneUpDirection));
-  launchParams.camera.vertical
-    = cosFovy * normalize(cross(launchParams.camera.horizontal,
-                                launchParams.camera.direction));
+  launchParams.camera.horizontal = cosFovy * aspect * 
+    normalize(cross(launchParams.camera.direction, camera.sceneUpDirection));
+  launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
+    launchParams.camera.direction));
+  launchParams.maxDepth   = 8;
 }
 
 // window resize logic - re-allocates color buffer and updates launch params with new buffer pointer and size

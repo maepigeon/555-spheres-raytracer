@@ -3,13 +3,12 @@
 #include <GL/gl.h>
 #include <vector>
 
-namespace osc {
+namespace spt {
 
   struct SampleWindow : public GLFCameraWindow {
     SampleWindow(const std::string &title, const std::vector<Sphere> &spheres, const Camera &camera, const float worldScale)
       : GLFCameraWindow(title, camera.position, camera.lookAt, camera.sceneUpDirection, worldScale),
-        sample(spheres)
-    {
+        sample(spheres) {
       sample.setCamera(camera);
     }
 
@@ -30,7 +29,7 @@ namespace osc {
       }
 
       glBindTexture(GL_TEXTURE_2D, fbTexture);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fbSize.x, fbSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, framebufferSize.x, framebufferSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
       glDisable(GL_LIGHTING);
       glColor3f(1, 1, 1);
@@ -41,28 +40,28 @@ namespace osc {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glDisable(GL_DEPTH_TEST);
-      glViewport(0, 0, fbSize.x, fbSize.y);
+      glViewport(0, 0, framebufferSize.x, framebufferSize.y);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      glOrtho(0.f, (float)fbSize.x, 0.f, (float)fbSize.y, -1.f, 1.f);
+      glOrtho(0.f, (float)framebufferSize.x, 0.f, (float)framebufferSize.y, -1.f, 1.f);
 
       glBegin(GL_QUADS);
       glTexCoord2f(0.f, 0.f); glVertex3f(0.f, 0.f, 0.f);
-      glTexCoord2f(0.f, 1.f); glVertex3f(0.f, (float)fbSize.y, 0.f);
-      glTexCoord2f(1.f, 1.f); glVertex3f((float)fbSize.x, (float)fbSize.y, 0.f);
-      glTexCoord2f(1.f, 0.f); glVertex3f((float)fbSize.x, 0.f,  0.f);
+      glTexCoord2f(0.f, 1.f); glVertex3f(0.f, (float)framebufferSize.y, 0.f);
+      glTexCoord2f(1.f, 1.f); glVertex3f((float)framebufferSize.x, (float)framebufferSize.y, 0.f);
+      glTexCoord2f(1.f, 0.f); glVertex3f((float)framebufferSize.x, 0.f,  0.f);
       glEnd();
     }
 
     virtual void resize(const vec2i &newSize) override {
-      fbSize = newSize;
+      framebufferSize = newSize;
       sample.resize(newSize);
       pixels.resize(newSize.x * newSize.y);
     }
 
-    vec2i                 fbSize;
-    GLuint                fbTexture {0};
-    SampleRenderer        sample;
+    vec2i framebufferSize;
+    GLuint fbTexture {0};
+    SampleRenderer sample;
     std::vector<uint32_t> pixels;
   };
 
@@ -70,12 +69,11 @@ namespace osc {
     try {
       std::vector<Sphere> spheres;
 
-      // red - rough
-      spheres.push_back({vec3f( 0.f,  0.f, 0.f), 0.5f, vec3f(.8f, .2f, .2f), 0.8f, 0.1f});
-      // green - shiny
-      spheres.push_back({vec3f( 1.2f, 0.f, 0.f), 0.5f, vec3f(.2f, .8f, .2f), 0.2f, 0.8f});
-      // blue - medium
-      spheres.push_back({vec3f(-1.2f, 0.f, 0.f), 0.5f, vec3f(.2f, .2f, .8f), 0.5f, 0.5f});
+      // center, radius, color, emissionColor, emissiveStrength
+      spheres.push_back({vec3f( 0.f, 0.f, 0.f), 0.25f, vec3f(1.f, 1.f, 1.f), 1.0f, vec3f(0.9f, 0.9f, 1.0f)});
+      spheres.push_back({vec3f( 2.f, 0.f, 0.f), 0.75f, vec3f(.4f, .9f, .4f), 0.f, vec3f(0.f)});
+      spheres.push_back({vec3f(-2.f, 0.f, 0.f), 0.75f, vec3f(1.f, 1.f, 1.f), 0.f, vec3f(0.f)});
+      spheres.push_back({vec3f(0.f, 0.0f, 2.1f), 1.0f, vec3f(1.f, 1.f, 1.f), 0.f, vec3f(0.f)});
 
       Camera camera = { vec3f(-3.f, 1.f, -4.f), vec3f( 0.f, 0.f,  0.f), vec3f( 0.f, 1.f,  0.f) };
 
@@ -89,5 +87,4 @@ namespace osc {
     }
     return 0;
   }
-
-} // ::osc
+}

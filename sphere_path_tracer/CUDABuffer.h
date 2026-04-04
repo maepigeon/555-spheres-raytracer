@@ -4,7 +4,7 @@
 #include <vector>
 #include <assert.h>
 
-namespace osc {
+namespace spt {
   /*! simple wrapper for creating, and managing a device-side CUDA
       buffer */
   struct CUDABuffer {

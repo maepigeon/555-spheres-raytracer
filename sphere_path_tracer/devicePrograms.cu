@@ -2,8 +2,8 @@
 #include "LaunchParams.h"
 #include "gdt/random/random.h"
 
-using namespace osc;
-namespace osc {
+using namespace spt;
+namespace spt {
 
   extern "C" __constant__ LaunchParams optixLaunchParams;
 
@@ -23,7 +23,7 @@ namespace osc {
     i1 = uptr & 0x00000000ffffffff;
   }
   template<typename T>
-  static __forceinline__ __device__ T *getPRD() {
+  static __forceinline__ __device__ T *getRayData() {
     return reinterpret_cast<T*>(unpackPointer(optixGetPayload_0(), optixGetPayload_1()));
   }
 
@@ -51,31 +51,50 @@ namespace osc {
     optixReportIntersection(t, 0);
   }
 
+
+static __forceinline__ __device__
+vec3f reflect(const vec3f &v, const vec3f &n) {
+    return v - 2.f * dot(v, n) * n;
+}
+
   // Closest hit shader - simple lambertian shading without bounces
   // TODO: replace with path tracing logic supporting bounces and dielectric/metal materials
   extern "C" __global__ void __closesthit__radiance() {
     const SphereSBTData &sbt = *(const SphereSBTData*)optixGetSbtDataPointer();
+    RayData &rd = *(RayData*)getRayData<RayData>();
 
-    const vec3f rayOrg = optixGetWorldRayOrigin();
+     if (sbt.emissiveStrength > 0.f) {
+        rd.color += rd.attenuation * sbt.emissionColor * sbt.emissiveStrength;
+        rd.isDone = true;
+        return;
+    }
+
     const vec3f rayDir = optixGetWorldRayDirection();
-    const float t      = optixGetRayTmax();
-    const vec3f hitP   = rayOrg + t * rayDir;
-    const vec3f Ng     = normalize(hitP - sbt.center);
+    const float t      = optixGetRayTmax(); // How far along the ray the intersection is, which optixTrace will automatically set to the closest hit
+    const vec3f hitPoint = (vec3f)optixGetWorldRayOrigin() + (t * rayDir);
+    const vec3f Ng = normalize(hitPoint - sbt.center);
+
+    rd.attenuation *= sbt.color;
+    rd.origin = hitPoint;
+    rd.direction = reflect(normalize(rayDir), Ng);
+    rd.depth++;
+    
+  
 
     // simple lambertian shading for now — replace with BRDF for path tracing
-    const float cosDN = 0.2f + 0.8f * fabsf(dot(rayDir, Ng));
-    vec3f &prd = *(vec3f*)getPRD<vec3f>();
-    prd = cosDN * sbt.color;
+    //const float cosDN = fabsf(dot(rayDir, Ng));
   }
 
   extern "C" __global__ void __anyhit__radiance() { }
 
   // miss shader - a gradient
   extern "C" __global__ void __miss__radiance() {
+    RayData &rd = *(RayData*)getRayData<RayData>();
     const vec3f rayDir = normalize((vec3f)optixGetWorldRayDirection());
-    const float t      = 0.5f * (rayDir.y + 1.0f); 
-    const vec3f sky    = (1.f - t) * vec3f(0.5f, 0.75f, 0.75f) + t * vec3f(1.0f, 0.5f, 0.5f); 
-    *getPRD<vec3f>() = sky;
+    const float t = 0.5f * (rayDir.y + 1.0f); 
+    const vec3f sky = (1.f - t) * vec3f(0.5f, 0.75f, 0.75f) + t * vec3f(1.0f, 0.5f, 0.5f); 
+    rd.color += rd.attenuation * sky;
+    rd.isDone = true;
   }
 
   // generate rays
@@ -84,32 +103,44 @@ namespace osc {
     const int iy = optixGetLaunchIndex().y;
     const auto &camera = optixLaunchParams.camera;
 
-    vec3f pixelColor = vec3f(0.f);
-    uint32_t u0, u1;
-    packPointer(&pixelColor, u0, u1);
+    RayData rd;
+    rd.origin = camera.position;
+    rd.attenuation = vec3f(1.f, 1.f, 1.f);
+    rd.depth = 0;
+    rd.isDone = false;
+    rd.color = vec3f(0.f);
+    const vec2f screenCoord (vec2f(ix+.5f, iy+.5f) / vec2f(optixLaunchParams.frame.size));
+    rd.direction = normalize(camera.direction + (screenCoord.x - 0.5f) * camera.horizontal
+                                              + (screenCoord.y - 0.5f) * camera.vertical);
 
-    const vec2f screen(vec2f(ix+.5f, iy+.5f)
-                      / vec2f(optixLaunchParams.frame.size));
 
-    vec3f rayDir = normalize(camera.direction
-                            + (screen.x - 0.5f) * camera.horizontal
-                            + (screen.y - 0.5f) * camera.vertical);
-    // https://raytracing-docs.nvidia.com/optix7/api/group__optix__device__api.html#ga11c7984d825b2a597e26a2a902386bbc
-    // Initiates a ray tracing query starting with the given traversable handle and ray data.
-    // The ray is traced through the scene graph until it either hits a geometry or misses the scene. 
-    // When a ray hits something, the corresponding hit program is executed. 
-    // If the ray misses the scene, the miss program is executed.
-    optixTrace(optixLaunchParams.traversable,
-              camera.position, rayDir,
-              0.f, 1e20f, 0.f,
-              OptixVisibilityMask(255),
-              OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-              SURFACE_RAY_TYPE, RAY_TYPE_COUNT, SURFACE_RAY_TYPE,
-              u0, u1);
+    while (!rd.isDone && rd.depth < optixLaunchParams.maxDepth) {
+      uint32_t u0, u1;
+      packPointer(&rd, u0, u1);
 
-    const int r = int(255.99f * pixelColor.x);
-    const int g = int(255.99f * pixelColor.y);
-    const int b = int(255.99f * pixelColor.z);
+      // https://raytracing-docs.nvidia.com/optix7/api/group__optix__device__api.html#ga11c7984d825b2a597e26a2a902386bbc
+      // Initiates a ray tracing query starting with the given traversable handle and ray data.
+      // The ray is traced through the scene graph until it either hits a geometry or misses the scene. 
+      // When a ray hits something, the corresponding hit program is executed. 
+      // If the ray misses the scene, the miss program is executed.
+      optixTrace(optixLaunchParams.traversable,
+                rd.origin, rd.direction,
+                1e-3f, 1e20f, 0.f,
+                OptixVisibilityMask(255),
+                OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                SURFACE_RAY_TYPE, RAY_TYPE_COUNT, SURFACE_RAY_TYPE,
+                u0, u1);
+    }
+    if (!rd.isDone) {
+        const vec3f dir = normalize(rd.direction);
+        const float t   = 0.5f * (dir.y + 1.0f);
+        const vec3f sky = (1.f-t)*vec3f(0.5f,0.75f,0.75f) + t*vec3f(1.f,0.5f,0.5f);
+        rd.color += rd.attenuation * sky;
+    }
+
+    const int r = int(255.99f * clamp(rd.color.x, 0.f, 1.f));
+    const int g = int(255.99f * clamp(rd.color.y, 0.f, 1.f));
+    const int b = int(255.99f * clamp(rd.color.z, 0.f, 1.f));
     const uint32_t rgba = 0xff000000 | (r<<0) | (g<<8) | (b<<16);
     optixLaunchParams.frame.colorBuffer[ix + iy*optixLaunchParams.frame.size.x] = rgba;
   }

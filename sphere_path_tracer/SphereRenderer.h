@@ -2,9 +2,7 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 
-namespace osc {
-
-
+namespace spt {
   // Define a simple camera data type with its position, a point that the camera is
   // facing towards, and a scene up direction
   struct Camera {
@@ -18,8 +16,8 @@ namespace osc {
     vec3f center;
     float radius;
     vec3f color;
-    float roughness;
-    float reflectivity;
+    float emissiveStrength;
+    vec3f emissionColor;
   };
 
   class SampleRenderer {
