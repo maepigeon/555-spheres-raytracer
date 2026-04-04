@@ -12,11 +12,11 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/4.3.1/CMakeCUDACompiler.cmake"
   "CMakeFiles/4.3.1/CMakeCXXCompiler.cmake"
   "CMakeFiles/4.3.1/CMakeSystem.cmake"
-  "/home/mae/workspace/cuda/555-spheres-raytracer/common/gdt/CMakeLists.txt"
-  "/home/mae/workspace/cuda/555-spheres-raytracer/common/gdt/cmake/FindOptiX.cmake"
-  "/home/mae/workspace/cuda/555-spheres-raytracer/common/gdt/cmake/configure_build_type.cmake"
-  "/home/mae/workspace/cuda/555-spheres-raytracer/common/gdt/cmake/configure_optix.cmake"
-  "/home/mae/workspace/cuda/555-spheres-raytracer/common/glfWindow/CMakeLists.txt"
+  "/home/mae/workspace/cuda/555-spheres-raytracer/include/glfWindow/CMakeLists.txt"
+  "/home/mae/workspace/cuda/555-spheres-raytracer/include/link-cuda-tools/CMakeLists.txt"
+  "/home/mae/workspace/cuda/555-spheres-raytracer/include/link-cuda-tools/cmake/FindOptiX.cmake"
+  "/home/mae/workspace/cuda/555-spheres-raytracer/include/link-cuda-tools/cmake/configure_build_type.cmake"
+  "/home/mae/workspace/cuda/555-spheres-raytracer/include/link-cuda-tools/cmake/configure_optix.cmake"
   "/home/mae/workspace/cuda/555-spheres-raytracer/sphere_path_tracer/CMakeLists.txt"
   "/snap/cmake/1530/share/cmake-4.3/Modules/CMakeCInformation.cmake"
   "/snap/cmake/1530/share/cmake-4.3/Modules/CMakeCUDAInformation.cmake"
@@ -74,15 +74,14 @@ set(CMAKE_MAKEFILE_OUTPUTS
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/CMakeDirectoryInformation.cmake"
-  "common/gdt/CMakeFiles/CMakeDirectoryInformation.cmake"
-  "common/glfWindow/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "include/link-cuda-tools/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "include/glfWindow/CMakeFiles/CMakeDirectoryInformation.cmake"
   "sphere_path_tracer/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "common/gdt/CMakeFiles/gdt.dir/DependInfo.cmake"
-  "common/glfWindow/CMakeFiles/glfWindow.dir/DependInfo.cmake"
+  "include/glfWindow/CMakeFiles/glfWindow.dir/DependInfo.cmake"
   "sphere_path_tracer/CMakeFiles/spherePathTracer_devicePrograms_ptx.dir/DependInfo.cmake"
   "sphere_path_tracer/CMakeFiles/generate_spherePathTracer_devicePrograms.dir/DependInfo.cmake"
   "sphere_path_tracer/CMakeFiles/spherePathTracer_devicePrograms.dir/DependInfo.cmake"

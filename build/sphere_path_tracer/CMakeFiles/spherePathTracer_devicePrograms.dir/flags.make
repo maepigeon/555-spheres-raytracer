@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/mae/workspace/cuda/555-spheres-raytracer/common/gdt -I/home/mae/workspace/cuda/555-spheres-raytracer/common/3rdParty -I/home/mae/workspace/cuda/555-spheres-raytracer/common
+CXX_INCLUDES = -I/home/mae/workspace/cuda/555-spheres-raytracer/include/link-cuda-tools -I/home/mae/workspace/cuda/555-spheres-raytracer/include/3rdParty -I/home/mae/workspace/cuda/555-spheres-raytracer/include
 
 CXX_FLAGS = -O3 -DNDEBUG -std=gnu++11 -fvisibility=default
 

@@ -5,20 +5,13 @@
   CMakeFiles/spherePathTracer_SBTData.dir/SphereRenderer.cpp.o \
   CMakeFiles/spherePathTracer_SBTData.dir/main.cpp.o \
   ../libspherePathTracer_devicePrograms.a \
-  ../libgdt.a \
   ../libglfWindow.a \
-  ../libgdt.a \
   /usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so \
   /usr/local/cuda-13.2/targets/x86_64-linux/lib/libcudart_static.a \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a \
   /usr/lib/x86_64-linux-gnu/librt.a \
   /usr/lib/x86_64-linux-gnu/libOpenGL.so \
   /usr/lib/x86_64-linux-gnu/libglfw.so.3.3 \
-  /usr/local/cuda/targets/x86_64-linux/lib/libcudadevrt.a \
-  /usr/local/cuda/targets/x86_64-linux/lib/libcudart_static.a \
-  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/librt.a \
-  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libpthread.a \
-  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a \
   /usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
@@ -65,11 +58,7 @@ CMakeFiles/spherePathTracer_SBTData.dir/main.cpp.o:
 
 ../libspherePathTracer_devicePrograms.a:
 
-../libgdt.a:
-
 ../libglfWindow.a:
-
-../libgdt.a:
 
 /usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so:
 
@@ -82,16 +71,6 @@ CMakeFiles/spherePathTracer_SBTData.dir/main.cpp.o:
 /usr/lib/x86_64-linux-gnu/libOpenGL.so:
 
 /usr/lib/x86_64-linux-gnu/libglfw.so.3.3:
-
-/usr/local/cuda/targets/x86_64-linux/lib/libcudadevrt.a:
-
-/usr/local/cuda/targets/x86_64-linux/lib/libcudart_static.a:
-
-/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/librt.a:
-
-/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libpthread.a:
-
-/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a:
 
 /usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so:
 

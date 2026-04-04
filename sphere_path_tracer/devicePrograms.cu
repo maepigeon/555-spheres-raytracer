@@ -1,6 +1,5 @@
 #include <optix_device.h>
 #include "LaunchParams.h"
-#include "gdt/random/random.h"
 #include <glm/glm.hpp>
 
 using namespace spt;

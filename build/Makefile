@@ -124,19 +124,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named gdt
-
-# Build rule for target.
-gdt: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gdt
-.PHONY : gdt
-
-# fast build rule for target.
-gdt/fast:
-	$(MAKE) $(MAKESILENT) -f common/gdt/CMakeFiles/gdt.dir/build.make common/gdt/CMakeFiles/gdt.dir/build
-.PHONY : gdt/fast
-
-#=============================================================================
 # Target rules for targets named glfWindow
 
 # Build rule for target.
@@ -146,7 +133,7 @@ glfWindow: cmake_check_build_system
 
 # fast build rule for target.
 glfWindow/fast:
-	$(MAKE) $(MAKESILENT) -f common/glfWindow/CMakeFiles/glfWindow.dir/build.make common/glfWindow/CMakeFiles/glfWindow.dir/build
+	$(MAKE) $(MAKESILENT) -f include/glfWindow/CMakeFiles/glfWindow.dir/build.make include/glfWindow/CMakeFiles/glfWindow.dir/build
 .PHONY : glfWindow/fast
 
 #=============================================================================
@@ -211,7 +198,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... generate_spherePathTracer_devicePrograms"
-	@echo "... gdt"
 	@echo "... glfWindow"
 	@echo "... spherePathTracer_SBTData"
 	@echo "... spherePathTracer_devicePrograms"

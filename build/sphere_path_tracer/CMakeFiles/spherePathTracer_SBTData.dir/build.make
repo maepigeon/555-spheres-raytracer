@@ -113,9 +113,7 @@ spherePathTracer_SBTData: sphere_path_tracer/CMakeFiles/spherePathTracer_SBTData
 spherePathTracer_SBTData: sphere_path_tracer/CMakeFiles/spherePathTracer_SBTData.dir/build.make
 spherePathTracer_SBTData: sphere_path_tracer/CMakeFiles/spherePathTracer_SBTData.dir/compiler_depend.ts
 spherePathTracer_SBTData: libspherePathTracer_devicePrograms.a
-spherePathTracer_SBTData: libgdt.a
 spherePathTracer_SBTData: libglfWindow.a
-spherePathTracer_SBTData: libgdt.a
 spherePathTracer_SBTData: /usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so
 spherePathTracer_SBTData: /usr/local/cuda-13.2/targets/x86_64-linux/lib/libcudart_static.a
 spherePathTracer_SBTData: /usr/lib/x86_64-linux-gnu/librt.a

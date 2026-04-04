@@ -19,42 +19,35 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
 # first, include gdt project to do some general configuration stuff
 # (build modes, glut, optix, etc)
 # ------------------------------------------------------------------
-set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${gdt_dir}/cmake/")
-include(${gdt_dir}/cmake/configure_build_type.cmake)
-include(${gdt_dir}/cmake/configure_optix.cmake)
+set(link-cuda-tools-dir ${PROJECT_SOURCE_DIR}/include/link-cuda-tools/)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${link-cuda-tools-dir}/cmake/")
+include(${link-cuda-tools-dir}/cmake/configure_build_type.cmake)
+include(${link-cuda-tools-dir}/cmake/configure_optix.cmake)
 
 #set(glfw_dir ${PROJECT_SOURCE_DIR}/submodules/glfw/)
 #include(${gdt_dir}/cmake/configure_glfw.cmake)
 
 mark_as_advanced(CUDA_SDK_ROOT_DIR)
 
-# ------------------------------------------------------------------
-# import gdt submodule
-# ------------------------------------------------------------------
-include_directories(${gdt_dir})
-add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
+# import link-cuda-tools submodule
+include_directories(${link-cuda-tools-dir})
+add_subdirectory(${link-cuda-tools-dir} EXCLUDE_FROM_ALL)
 
-# ------------------------------------------------------------------
-# include GLM (replaces gdt math)
-# ------------------------------------------------------------------
+# include GLM
 set(GLM_HEADER_ONLY ON)
-include_directories(${PROJECT_SOURCE_DIR}/common/3rdParty)
+include_directories(${PROJECT_SOURCE_DIR}/include/3rdParty)
 
-# ------------------------------------------------------------------
 # build glfw
-# ------------------------------------------------------------------
 set(OpenGL_GL_PREFERENCE LEGACY)
 if (WIN32)
-#  set(glfw_dir ${PROJECT_SOURCE_DIR}/submodules/glfw/)
-  set(glfw_dir ${PROJECT_SOURCE_DIR}/common/3rdParty/glfw/)
+  set(glfw_dir ${PROJECT_SOURCE_DIR}/include/3rdParty/glfw/)
   include_directories(${glfw_dir}/include)
   add_subdirectory(${glfw_dir} EXCLUDE_FROM_ALL)
 else()
   find_package(glfw3 REQUIRED)
 endif()
-include_directories(common)
-add_subdirectory(common/glfWindow EXCLUDE_FROM_ALL)
+include_directories(include)
+add_subdirectory(include/glfWindow EXCLUDE_FROM_ALL)
 
 
 # ------------------------------------------------------------------
