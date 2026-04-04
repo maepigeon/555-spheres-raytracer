@@ -22,8 +22,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-/*! \namespace osc - Optix Siggraph Course */
-namespace osc {
+/*! \namespace spt - Sphere Path Tracer */
+namespace spt {
   using namespace gdt;
 
 
