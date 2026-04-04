@@ -1,5 +1,8 @@
 #include "SphereRenderer.h"
 #include <optix_function_table_definition.h>
+#include <glm/glm.hpp>
+#include <iostream>
+#include <cstdio>
 
 namespace spt {
 
@@ -36,7 +39,7 @@ SampleRenderer::SampleRenderer(const std::vector<Sphere> &spheres)
   std::cout << "building SBT" << std::endl;
   buildSBT();
   launchParamsBuffer.alloc(sizeof(launchParams));
-  std::cout << GDT_TERMINAL_GREEN << "#osc: fully set up" << GDT_TERMINAL_DEFAULT << std::endl;
+  std::cout << "#osc: fully set up" << std::endl;
 }
 
 OptixTraversableHandle SampleRenderer::buildAccel(const std::vector<Sphere> &spheres)
@@ -129,9 +132,7 @@ void SampleRenderer::initOptix()
     throw std::runtime_error("#osc: no CUDA capable devices found!");
   std::cout << "#osc: found " << numDevices << " CUDA devices" << std::endl;
   OPTIX_CHECK(optixInit());
-  std::cout << GDT_TERMINAL_GREEN
-            << "#osc: successfully initialized optix... yay!"
-            << GDT_TERMINAL_DEFAULT << std::endl;
+  std::cout << "#osc: successfully initialized optix... yay!" << std::endl;
 }
 
 static void context_log_cb(unsigned int level, const char *tag,
@@ -181,7 +182,7 @@ void SampleRenderer::createModule()
                               &pipelineCompileOptions,
                               ptxCode.c_str(), ptxCode.size(),
                               log, &sizeof_log, &module));
-  if (sizeof_log > 1) PRINT(log);    
+  if (sizeof_log > 1) printf("%s\n", log);    
 }
 
 void SampleRenderer::createRaygenPrograms() {
@@ -196,7 +197,7 @@ void SampleRenderer::createRaygenPrograms() {
   size_t sizeof_log = sizeof(log);
   OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions,
                                        log, &sizeof_log, &raygenPGs[0]));
-  if (sizeof_log > 1) PRINT(log);
+  if (sizeof_log > 1) printf("%s\n", log);
 }
 
 // If the ray misses, return a color based on the ray direction to create a gradient background
@@ -212,7 +213,7 @@ void SampleRenderer::createMissPrograms() {
   size_t sizeof_log = sizeof(log);
   OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions,
                                        log, &sizeof_log, &missPGs[0]));
-  if (sizeof_log > 1) PRINT(log);
+  if (sizeof_log > 1) printf("%s\n", log);
 }
 
 // Send optix the program descriptor for intersection and hit shaders
@@ -233,7 +234,7 @@ void SampleRenderer::createHitgroupPrograms() {
   size_t sizeof_log = sizeof(log);
   OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions,
                                        log, &sizeof_log, &hitgroupPGs[0]));
-  if (sizeof_log > 1) PRINT(log);
+  if (sizeof_log > 1) printf("%s\n", log);
 }
 
 // Creates an optix pipiline with the raygen, miss, and hitgroup programs
@@ -251,10 +252,10 @@ void SampleRenderer::createPipeline() {
                                    programGroups.data(),
                                    (int)programGroups.size(),
                                    log, &sizeof_log, &pipeline));
-  if (sizeof_log > 1) PRINT(log);
+  if (sizeof_log > 1) printf("%s\n", log);
 
   OPTIX_CHECK(optixPipelineSetStackSize(pipeline, 2*1024, 2*1024, 2*1024, 1));
-  if (sizeof_log > 1) PRINT(log);
+  if (sizeof_log > 1) printf("%s\n", log);
 }
 
 // builds shader binding table (tells opitix what shaders to run and the data to use in a shader)
@@ -329,7 +330,7 @@ void SampleRenderer::setCamera(const Camera &camera) {
 }
 
 // window resize logic - re-allocates color buffer and updates launch params with new buffer pointer and size
-void SampleRenderer::resize(const vec2i &newSize) {
+void SampleRenderer::resize(const glm::ivec2 &newSize) {
   if (newSize.x == 0 || newSize.y == 0) return;
   colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
   launchParams.frame.size        = newSize;

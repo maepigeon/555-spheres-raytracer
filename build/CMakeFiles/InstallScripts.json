@@ -1,0 +1,10 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/mae/workspace/cuda/555-spheres-raytracer/build/cmake_install.cmake",
+		"/home/mae/workspace/cuda/555-spheres-raytracer/build/common/gdt/cmake_install.cmake",
+		"/home/mae/workspace/cuda/555-spheres-raytracer/build/common/glfWindow/cmake_install.cmake",
+		"/home/mae/workspace/cuda/555-spheres-raytracer/build/sphere_path_tracer/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

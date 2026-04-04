@@ -16,15 +16,17 @@
 
 #pragma once
 
-// common gdt helper tools
-#include "gdt/math/AffineSpace.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <memory>
+#include <iostream>
 // glfw framework
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 /*! \namespace spt - Sphere Path Tracer */
 namespace spt {
-  using namespace gdt;
 
 
   struct GLFWindow {
@@ -36,25 +38,25 @@ namespace spt {
     { /* empty - to be subclassed by user */ }
 
     /*! callback that window got resized */
-    virtual void resize(const vec2i &newSize)
+    virtual void resize(const glm::ivec2 &newSize)
     { /* empty - to be subclassed by user */ }
 
     virtual void key(int key, int mods)
     {}
     
     /*! callback that window got resized */
-    virtual void mouseMotion(const vec2i &newPos)
+    virtual void mouseMotion(const glm::ivec2 &newPos)
     {}
     
     /*! callback that window got resized */
     virtual void mouseButton(int button, int action, int mods)
     {}
 
-    inline vec2i getMousePos() const
+    inline glm::ivec2 getMousePos() const
     {
       double x,y;
       glfwGetCursorPos(handle,&x,&y);
-      return vec2i((int)x, (int)y);
+      return glm::ivec2((int)x, (int)y);
     }
     
     /*! re-render the frame - typically part of draw(), but we keep
@@ -80,34 +82,34 @@ namespace spt {
     {
     }
     
-    vec3f getPOI() const
+    glm::vec3 getPOI() const
     { 
       return position - poiDistance * frame.vz;
     }
       
     /*! re-compute all orientation related fields from given
       'user-style' camera parameters */
-    void setOrientation(/* camera origin    : */const vec3f &origin,
-                        /* point of interest: */const vec3f &interest,
-                        /* up-vector        : */const vec3f &up)
+    void setOrientation(/* camera origin    : */const glm::vec3 &origin,
+                        /* point of interest: */const glm::vec3 &interest,
+                        /* up-vector        : */const glm::vec3 &up)
     {
       position = origin;
       upVector = up;
       frame.vz
         = (interest==origin)
-        ? vec3f(0,0,1)
-        : /* negative because we use NEGATIZE z axis */ - normalize(interest - origin);
-      frame.vx = cross(up,frame.vz);
-      if (dot(frame.vx,frame.vx) < 1e-8f)
-        frame.vx = vec3f(0,1,0);
+        ? glm::vec3(0,0,1)
+        : /* negative because we use NEGATIZE z axis */ - glm::normalize(interest - origin);
+      frame.vx = glm::cross(up,frame.vz);
+      if (glm::dot(frame.vx,frame.vx) < 1e-8f)
+        frame.vx = glm::vec3(0,1,0);
       else
-        frame.vx = normalize(frame.vx);
+        frame.vx = glm::normalize(frame.vx);
       // frame.vx
-      //   = (fabs(dot(up,frame.vz)) < 1e-6f)
-      //   ? vec3f(0,1,0)
-      //   : normalize(cross(up,frame.vz));
-      frame.vy = normalize(cross(frame.vz,frame.vx));
-      poiDistance = length(interest-origin);
+      //   = (fabs(glm::dot(up,frame.vz)) < 1e-6f)
+      //   ? glm::vec3(0,1,0)
+      //   : glm::normalize(glm::cross(up,frame.vz));
+      frame.vy = glm::normalize(glm::cross(frame.vz,frame.vx));
+      poiDistance = glm::length(interest-origin);
       forceUpFrame();
     }
       
@@ -115,15 +117,15 @@ namespace spt {
     void forceUpFrame()
     {
       // frame.vz remains unchanged
-      if (fabsf(dot(frame.vz,upVector)) < 1e-6f)
+      if (fabsf(glm::dot(frame.vz,upVector)) < 1e-6f)
         // looking along upvector; not much we can do here ...
         return;
-      frame.vx = normalize(cross(upVector,frame.vz));
-      frame.vy = normalize(cross(frame.vz,frame.vx));
+      frame.vx = glm::normalize(glm::cross(upVector,frame.vz));
+      frame.vy = glm::normalize(glm::cross(frame.vz,frame.vx));
       modified = true;
     }
 
-    void setUpVector(const vec3f &up)
+    void setUpVector(const glm::vec3 &up)
     { upVector = up; forceUpFrame(); }
 
     inline float computeStableEpsilon(float f) const
@@ -131,23 +133,27 @@ namespace spt {
       return abs(f) * float(1./(1<<21));
     }
                                
-    inline float computeStableEpsilon(const vec3f v) const
+    inline float computeStableEpsilon(const glm::vec3 v) const
     {
-      return max(max(computeStableEpsilon(v.x),
+      return glm::max(glm::max(computeStableEpsilon(v.x),
                      computeStableEpsilon(v.y)),
                  computeStableEpsilon(v.z));
     }
 
-    inline vec3f get_cameraPosition() const { return position; }
-    inline vec3f get_lookAt() const { return getPOI(); }
-    inline vec3f get_sceneUpDirection() const { return upVector; }
+    inline glm::vec3 get_cameraPosition() const { return position; }
+    inline glm::vec3 get_lookAt() const { return getPOI(); }
+    inline glm::vec3 get_sceneUpDirection() const { return upVector; }
       
-    linear3f      frame         { one };
-    vec3f         position      { 0,-1,0 };
+    struct Frame {
+      glm::vec3 vx { 1.f, 0.f, 0.f };
+      glm::vec3 vy { 0.f, 1.f, 0.f };
+      glm::vec3 vz { 0.f, 0.f, 1.f };
+    } frame;
+    glm::vec3      position      { 0.f,-1.f,0.f };
     /*! distance to the 'point of interst' (poi); e.g., the point we
       will rotate around */
     float         poiDistance   { 1.f };
-    vec3f         upVector      { 0,1,0 };
+    glm::vec3      upVector      { 0.f,1.f,0.f };
     /* if set to true, any change to the frame will always use to
        upVector to 'force' the frame back upwards; if set to false,
        the upVector will be ignored */
@@ -194,36 +200,32 @@ namespace spt {
         std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
         break;
       case 'C':
-        std::cout << "(C)urrent camera:" << std::endl;
-        std::cout << "- from :" << fc.position << std::endl;
-        std::cout << "- poi  :" << fc.getPOI() << std::endl;
-        std::cout << "- upVec:" << fc.upVector << std::endl; 
-        std::cout << "- frame:" << fc.frame << std::endl;
+
         break;
       case 'x':
       case 'X':
-        fc.setUpVector(fc.upVector==vec3f(1,0,0)?vec3f(-1,0,0):vec3f(1,0,0));
+        fc.setUpVector(fc.upVector==glm::vec3(1,0,0)?glm::vec3(-1,0,0):glm::vec3(1,0,0));
         break;
       case 'y':
       case 'Y':
-        fc.setUpVector(fc.upVector==vec3f(0,1,0)?vec3f(0,-1,0):vec3f(0,1,0));
+        fc.setUpVector(fc.upVector==glm::vec3(0,1,0)?glm::vec3(0,-1,0):glm::vec3(0,1,0));
         break;
       case 'z':
       case 'Z':
-        fc.setUpVector(fc.upVector==vec3f(0,0,1)?vec3f(0,0,-1):vec3f(0,0,1));
+        fc.setUpVector(fc.upVector==glm::vec3(0,0,1)?glm::vec3(0,0,-1):glm::vec3(0,0,1));
         break;
       default:
         break;
       }
     }
 
-    virtual void strafe(const vec3f &howMuch)
+    virtual void strafe(const glm::vec3 &howMuch)
     {
       cameraFrame->position += howMuch;
       cameraFrame->modified =  true;
     }
     /*! strafe, in screen space */
-    virtual void strafe(const vec2f &howMuch)
+    virtual void strafe(const glm::vec2 &howMuch)
     {
       strafe(+howMuch.x*cameraFrame->frame.vx
              -howMuch.y*cameraFrame->frame.vy);
@@ -237,7 +239,7 @@ namespace spt {
     
     /*! mouse got dragged with left button pressedn, by 'delta'
       pixels, at last position where */
-    virtual void mouseDragLeft  (const vec2f &delta)
+    virtual void mouseDragLeft  (const glm::vec2 &delta)
     {
       rotate(delta.x * degrees_per_drag_fraction,
              delta.y * degrees_per_drag_fraction);
@@ -245,14 +247,14 @@ namespace spt {
     
     /*! mouse got dragged with left button pressedn, by 'delta'
       pixels, at last position where */
-    virtual void mouseDragMiddle(const vec2f &delta)
+    virtual void mouseDragMiddle(const glm::vec2 &delta)
     {
       strafe(delta*pixels_per_move*cameraFrame->motionSpeed);
     }
 
     /*! mouse got dragged with left button pressedn, by 'delta'
       pixels, at last position where */
-    virtual void mouseDragRight (const vec2f &delta)
+    virtual void mouseDragRight (const glm::vec2 &delta)
     {
       move(delta.y*pixels_per_move*cameraFrame->motionSpeed);
     }
@@ -276,9 +278,9 @@ namespace spt {
 
   struct GLFCameraWindow : public GLFWindow {
     GLFCameraWindow(const std::string &title,
-                    const vec3f &camera_from,
-                    const vec3f &camera_at,
-                    const vec3f &camera_up,
+                    const glm::vec3 &camera_from,
+                    const glm::vec3 &camera_at,
+                    const glm::vec3 &camera_up,
                     const float worldScale)
       : GLFWindow(title),
         cameraFrame(worldScale)
@@ -319,17 +321,17 @@ namespace spt {
     }
     
     /*! callback that window got resized */
-    virtual void mouseMotion(const vec2i &newPos) override
+    virtual void mouseMotion(const glm::ivec2 &newPos) override
     {
-      vec2i windowSize;
+      glm::ivec2 windowSize;
       glfwGetWindowSize(handle, &windowSize.x, &windowSize.y);
       
       if (isPressed.leftButton && cameraFrameManip)
-        cameraFrameManip->mouseDragLeft(vec2f(newPos-lastMousePos)/vec2f(windowSize));
+        cameraFrameManip->mouseDragLeft(glm::vec2(newPos-lastMousePos)/glm::vec2(windowSize));
       if (isPressed.rightButton && cameraFrameManip)
-        cameraFrameManip->mouseDragRight(vec2f(newPos-lastMousePos)/vec2f(windowSize));
+        cameraFrameManip->mouseDragRight(glm::vec2(newPos-lastMousePos)/glm::vec2(windowSize));
       if (isPressed.middleButton && cameraFrameManip)
-        cameraFrameManip->mouseDragMiddle(vec2f(newPos-lastMousePos)/vec2f(windowSize));
+        cameraFrameManip->mouseDragMiddle(glm::vec2(newPos-lastMousePos)/glm::vec2(windowSize));
       lastMousePos = newPos;
       /* empty - to be subclassed by user */
     }
@@ -373,7 +375,7 @@ namespace spt {
     struct {
       bool leftButton { false }, middleButton { false }, rightButton { false };
     } isPressed;
-    vec2i lastMousePos = { -1,-1 };
+    glm::ivec2 lastMousePos = { -1,-1 };
 
     friend struct CameraFrameManip;
 
@@ -426,11 +428,17 @@ namespace spt {
 
       CameraFrame &fc = *cameraFrame;
       
-      const vec3f poi  = fc.getPOI();
-      fc.frame
-        = linear3f::rotate(fc.frame.vy,rad_u)
-        * linear3f::rotate(fc.frame.vx,rad_v)
-        * fc.frame;
+      const glm::vec3 poi  = fc.getPOI();
+      
+      // Apply rotations to frame vectors using GLM quaternions
+      glm::quat quat_u = glm::angleAxis(rad_u, fc.frame.vy);
+      glm::quat quat_v = glm::angleAxis(rad_v, fc.frame.vx);
+      glm::quat combined = quat_u * quat_v;
+      glm::mat3 rot_matrix = glm::mat3_cast(combined);
+      
+      fc.frame.vx = rot_matrix * fc.frame.vx;
+      fc.frame.vy = rot_matrix * fc.frame.vy;
+      fc.frame.vz = rot_matrix * fc.frame.vz;
 
       if (fc.forceUp) fc.forceUpFrame();
 
@@ -443,10 +451,10 @@ namespace spt {
       all properly set, the widget gets notified, etc */
     virtual void move(const float step) override
     {
-      const vec3f poi = cameraFrame->getPOI();
+      const glm::vec3 poi = cameraFrame->getPOI();
       // inspectmode can't get 'beyond' the look-at point:
       const float minReqDistance = 0.1f * cameraFrame->motionSpeed;
-      cameraFrame->poiDistance   = max(minReqDistance,cameraFrame->poiDistance-step);
+      cameraFrame->poiDistance   = glm::max(minReqDistance,cameraFrame->poiDistance-step);
       cameraFrame->position      = poi + cameraFrame->poiDistance * cameraFrame->frame.vz;
       cameraFrame->modified      = true;
     }
@@ -479,11 +487,15 @@ namespace spt {
 
       CameraFrame &fc = *cameraFrame;
       
-      //const vec3f poi  = fc.getPOI();
-      fc.frame
-        = linear3f::rotate(fc.frame.vy,rad_u)
-        * linear3f::rotate(fc.frame.vx,rad_v)
-        * fc.frame;
+      // Apply rotations to frame vectors using GLM quaternions
+      glm::quat quat_u = glm::angleAxis(rad_u, fc.frame.vy);
+      glm::quat quat_v = glm::angleAxis(rad_v, fc.frame.vx);
+      glm::quat combined = quat_u * quat_v;
+      glm::mat3 rot_matrix = glm::mat3_cast(combined);
+      
+      fc.frame.vx = rot_matrix * fc.frame.vx;
+      fc.frame.vy = rot_matrix * fc.frame.vy;
+      fc.frame.vz = rot_matrix * fc.frame.vz;
 
       if (fc.forceUp) fc.forceUpFrame();
 

@@ -15,10 +15,12 @@
 // ======================================================================== //
 
 #include "GLFWindow.h"
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 /*! \namespace spt - Sphere Path Tracer */
 namespace spt {
-  using namespace gdt;
   
   static void glfw_error_callback(int error, const char* description)
   {
@@ -59,7 +61,7 @@ namespace spt {
   {
     GLFWindow *gw = static_cast<GLFWindow*>(glfwGetWindowUserPointer(window));
     assert(gw);
-    gw->resize(vec2i(width,height));
+    gw->resize(glm::ivec2(width,height));
   // assert(GLFWindow::current);
   //   GLFWindow::current->resize(vec2i(width,height));
   }
@@ -79,7 +81,7 @@ namespace spt {
   {
     GLFWindow *gw = static_cast<GLFWindow*>(glfwGetWindowUserPointer(window));
     assert(gw);
-    gw->mouseMotion(vec2i((int)x, (int)y));
+    gw->mouseMotion(glm::ivec2((int)x, (int)y));
   }
 
   /*! callback for pressing _or_ releasing a mouse button*/
@@ -96,7 +98,7 @@ namespace spt {
   {
     int width, height;
     glfwGetFramebufferSize(handle, &width, &height);
-    resize(vec2i(width,height));
+    resize(glm::ivec2(width,height));
 
     // glfwSetWindowUserPointer(window, GLFWindow::current);
     glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);

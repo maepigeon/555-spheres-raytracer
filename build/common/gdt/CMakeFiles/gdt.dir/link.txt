@@ -1,0 +1,3 @@
+/usr/bin/ar qc ../../libgdt.a CMakeFiles/gdt.dir/gdt/gdt.cu.o
+/usr/bin/ar q ../../libgdt.a CMakeFiles/gdt.dir/cmake_device_link.o
+/usr/bin/ranlib ../../libgdt.a

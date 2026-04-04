@@ -2,6 +2,7 @@
 #include "glfWindow/GLFWindow.h"
 #include <GL/gl.h>
 #include <vector>
+#include <glm/glm.hpp>
 
 namespace spt {
 
@@ -53,13 +54,13 @@ namespace spt {
       glEnd();
     }
 
-    virtual void resize(const vec2i &newSize) override {
+    virtual void resize(const glm::ivec2 &newSize) override {
       framebufferSize = newSize;
       sample.resize(newSize);
       pixels.resize(newSize.x * newSize.y);
     }
 
-    vec2i framebufferSize;
+    glm::ivec2 framebufferSize;
     GLuint fbTexture {0};
     SampleRenderer sample;
     std::vector<uint32_t> pixels;
@@ -70,19 +71,19 @@ namespace spt {
       std::vector<Sphere> spheres;
 
       // center, radius, color, emissionColor, emissiveStrength
-      spheres.push_back({vec3f( 0.f, 0.f, 0.f), 0.25f, vec3f(1.f, 1.f, 1.f), 1.0f, vec3f(0.9f, 0.9f, 1.0f)});
-      spheres.push_back({vec3f( 2.f, 0.f, 0.f), 0.75f, vec3f(.4f, .9f, .4f), 0.f, vec3f(0.f)});
-      spheres.push_back({vec3f(-2.f, 0.f, 0.f), 0.75f, vec3f(1.f, 1.f, 1.f), 0.f, vec3f(0.f)});
-      spheres.push_back({vec3f(0.f, 0.0f, 2.1f), 1.0f, vec3f(1.f, 1.f, 1.f), 0.f, vec3f(0.f)});
+      spheres.push_back({glm::vec3( 0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 1.0f, glm::vec3(0.9f, 0.9f, 1.0f)});
+      spheres.push_back({glm::vec3( 2.f, 0.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f)});
+      spheres.push_back({glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f)});
+      spheres.push_back({glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f)});
 
-      Camera camera = { vec3f(-3.f, 1.f, -4.f), vec3f( 0.f, 0.f,  0.f), vec3f( 0.f, 1.f,  0.f) };
+      Camera camera = { glm::vec3(-3.f, 1.f, -4.f), glm::vec3( 0.f, 0.f,  0.f), glm::vec3( 0.f, 1.f,  0.f) };
 
       const float worldScale = 5.f;
       SampleWindow *window = new SampleWindow("Sphere Path Tracer", spheres, camera, worldScale);
       window->run();
 
     } catch (std::runtime_error &e) {
-      std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what() << GDT_TERMINAL_DEFAULT << std::endl;
+      std::cout << "FATAL ERROR: " << e.what() << std::endl;
       exit(1);
     }
     return 0;

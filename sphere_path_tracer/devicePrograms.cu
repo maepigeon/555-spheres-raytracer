@@ -1,6 +1,7 @@
 #include <optix_device.h>
 #include "LaunchParams.h"
 #include "gdt/random/random.h"
+#include <glm/glm.hpp>
 
 using namespace spt;
 namespace spt {
@@ -9,6 +10,14 @@ namespace spt {
 
   enum { SURFACE_RAY_TYPE=0, RAY_TYPE_COUNT };
 
+  // Helper functions to convert between float3 (OptiX) and glm::vec3
+  __forceinline__ __device__ glm::vec3 make_glm_vec3(const float3 &v) {
+    return glm::vec3(v.x, v.y, v.z);
+  }
+  
+  __forceinline__ __device__ float3 to_float3(const glm::vec3 &v) {
+    return make_float3(v.x, v.y, v.z);
+  }
 
   // Packs and unpacks 64-bit apointers into two 32-bit payload registers because optixTrace only supports 32-bit payloads.
   static __forceinline__ __device__
@@ -31,13 +40,13 @@ namespace spt {
   extern "C" __global__ void __intersection__sphere() {
     const SphereSBTData &sbt = *(const SphereSBTData*)optixGetSbtDataPointer();
 
-    const vec3f org  = optixGetObjectRayOrigin();
-    const vec3f dir  = optixGetObjectRayDirection();
-    const vec3f oc   = org - sbt.center;
+    const glm::vec3 org  = make_glm_vec3(optixGetObjectRayOrigin());
+    const glm::vec3 dir  = make_glm_vec3(optixGetObjectRayDirection());
+    const glm::vec3 oc   = org - sbt.center;
 
-    const float a = dot(dir, dir);
-    const float b = 2.f * dot(oc, dir);
-    const float c = dot(oc, oc) - sbt.radius * sbt.radius;
+    const float a = glm::dot(dir, dir);
+    const float b = 2.f * glm::dot(oc, dir);
+    const float c = glm::dot(oc, oc) - sbt.radius * sbt.radius;
     const float disc = b*b - 4.f*a*c;
 
     if (disc < 0.f) return;
@@ -53,8 +62,8 @@ namespace spt {
 
 
 static __forceinline__ __device__
-vec3f reflect(const vec3f &v, const vec3f &n) {
-    return v - 2.f * dot(v, n) * n;
+glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
+    return v - 2.f * glm::dot(v, n) * n;
 }
 
   // Closest hit shader - simple lambertian shading without bounces
@@ -69,14 +78,14 @@ vec3f reflect(const vec3f &v, const vec3f &n) {
         return;
     }
 
-    const vec3f rayDir = optixGetWorldRayDirection();
+    const glm::vec3 rayDir = make_glm_vec3(optixGetWorldRayDirection());
     const float t      = optixGetRayTmax(); // How far along the ray the intersection is, which optixTrace will automatically set to the closest hit
-    const vec3f hitPoint = (vec3f)optixGetWorldRayOrigin() + (t * rayDir);
-    const vec3f Ng = normalize(hitPoint - sbt.center);
+    const glm::vec3 hitPoint = make_glm_vec3(optixGetWorldRayOrigin()) + (t * rayDir);
+    const glm::vec3 Ng = glm::normalize(hitPoint - sbt.center);
 
     rd.attenuation *= sbt.color;
     rd.origin = hitPoint;
-    rd.direction = reflect(normalize(rayDir), Ng);
+    rd.direction = reflect(glm::normalize(rayDir), Ng);
     rd.depth++;
     
   
@@ -90,9 +99,9 @@ vec3f reflect(const vec3f &v, const vec3f &n) {
   // miss shader - a gradient
   extern "C" __global__ void __miss__radiance() {
     RayData &rd = *(RayData*)getRayData<RayData>();
-    const vec3f rayDir = normalize((vec3f)optixGetWorldRayDirection());
+    const glm::vec3 rayDir = glm::normalize(make_glm_vec3(optixGetWorldRayDirection()));
     const float t = 0.5f * (rayDir.y + 1.0f); 
-    const vec3f sky = (1.f - t) * vec3f(0.5f, 0.75f, 0.75f) + t * vec3f(1.0f, 0.5f, 0.5f); 
+    const glm::vec3 sky = (1.f - t) * glm::vec3(0.5f, 0.75f, 0.75f) + t * glm::vec3(1.0f, 0.5f, 0.5f); 
     rd.color += rd.attenuation * sky;
     rd.isDone = true;
   }
@@ -105,12 +114,12 @@ vec3f reflect(const vec3f &v, const vec3f &n) {
 
     RayData rd;
     rd.origin = camera.position;
-    rd.attenuation = vec3f(1.f, 1.f, 1.f);
+    rd.attenuation = glm::vec3(1.f, 1.f, 1.f);
     rd.depth = 0;
     rd.isDone = false;
-    rd.color = vec3f(0.f);
-    const vec2f screenCoord (vec2f(ix+.5f, iy+.5f) / vec2f(optixLaunchParams.frame.size));
-    rd.direction = normalize(camera.direction + (screenCoord.x - 0.5f) * camera.horizontal
+    rd.color = glm::vec3(0.f);
+    const glm::vec2 screenCoord (glm::vec2(ix+.5f, iy+.5f) / glm::vec2(optixLaunchParams.frame.size));
+    rd.direction = glm::normalize(camera.direction + (screenCoord.x - 0.5f) * camera.horizontal
                                               + (screenCoord.y - 0.5f) * camera.vertical);
 
 
@@ -124,7 +133,7 @@ vec3f reflect(const vec3f &v, const vec3f &n) {
       // When a ray hits something, the corresponding hit program is executed. 
       // If the ray misses the scene, the miss program is executed.
       optixTrace(optixLaunchParams.traversable,
-                rd.origin, rd.direction,
+                to_float3(rd.origin), to_float3(rd.direction),
                 1e-3f, 1e20f, 0.f,
                 OptixVisibilityMask(255),
                 OPTIX_RAY_FLAG_DISABLE_ANYHIT,
@@ -132,15 +141,15 @@ vec3f reflect(const vec3f &v, const vec3f &n) {
                 u0, u1);
     }
     if (!rd.isDone) {
-        const vec3f dir = normalize(rd.direction);
+        const glm::vec3 dir = glm::normalize(rd.direction);
         const float t   = 0.5f * (dir.y + 1.0f);
-        const vec3f sky = (1.f-t)*vec3f(0.5f,0.75f,0.75f) + t*vec3f(1.f,0.5f,0.5f);
+        const glm::vec3 sky = (1.f-t)*glm::vec3(0.5f,0.75f,0.75f) + t*glm::vec3(1.f,0.5f,0.5f);
         rd.color += rd.attenuation * sky;
     }
 
-    const int r = int(255.99f * clamp(rd.color.x, 0.f, 1.f));
-    const int g = int(255.99f * clamp(rd.color.y, 0.f, 1.f));
-    const int b = int(255.99f * clamp(rd.color.z, 0.f, 1.f));
+    const int r = int(255.99f * glm::clamp(rd.color.x, 0.f, 1.f));
+    const int g = int(255.99f * glm::clamp(rd.color.y, 0.f, 1.f));
+    const int b = int(255.99f * glm::clamp(rd.color.z, 0.f, 1.f));
     const uint32_t rgba = 0xff000000 | (r<<0) | (g<<8) | (b<<16);
     optixLaunchParams.frame.colorBuffer[ix + iy*optixLaunchParams.frame.size.x] = rgba;
   }

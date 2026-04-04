@@ -1,30 +1,31 @@
 #pragma once
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
+#include <glm/glm.hpp>
 
 namespace spt {
   // Define a simple camera data type with its position, a point that the camera is
   // facing towards, and a scene up direction
   struct Camera {
-    vec3f position;
-    vec3f lookAt;
-    vec3f sceneUpDirection;
+    glm::vec3 position;
+    glm::vec3 lookAt;
+    glm::vec3 sceneUpDirection;
   };
 
   // Define sphere data type we can render
   struct Sphere {
-    vec3f center;
+    glm::vec3 center;
     float radius;
-    vec3f color;
+    glm::vec3 color;
     float emissiveStrength;
-    vec3f emissionColor;
+    glm::vec3 emissionColor;
   };
 
   class SampleRenderer {
   public:
     SampleRenderer(const std::vector<Sphere> &spheres);
     void render();
-    void resize(const vec2i &newSize);
+    void resize(const glm::ivec2 &newSize);
     void downloadPixels(uint32_t h_pixels[]);
     void setCamera(const Camera &camera);
 

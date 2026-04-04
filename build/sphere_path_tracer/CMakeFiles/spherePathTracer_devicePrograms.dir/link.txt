@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../libspherePathTracer_devicePrograms.a CMakeFiles/spherePathTracer_devicePrograms.dir/Release/spherePathTracer_devicePrograms.cpp.o
+/usr/bin/ranlib ../libspherePathTracer_devicePrograms.a

@@ -1,28 +1,27 @@
 #pragma once
-#include "gdt/math/vec.h"
+#include <glm/glm.hpp>
 #include "optix7.h"
 
 namespace spt {
-  using namespace gdt;
 
   // Completely reflective ray (Can later add roughness)
   struct SphereSBTData {
-    vec3f color;
-    vec3f emissionColor;
+    glm::vec3 color;
+    glm::vec3 emissionColor;
     float emissiveStrength;
-    vec3f center;
+    glm::vec3 center;
     float radius;
   };
 
   struct RayData {
-      vec3f origin;
-      vec3f direction;
-      vec3f attenuation; // How much the original light has been filtered by surfaces
+      glm::vec3 origin;
+      glm::vec3 direction;
+      glm::vec3 attenuation; // How much the original light has been filtered by surfaces
                         // that the ray has bounced on so far.
                         // This is used to accumulate the final color of the ray.
       int depth;  // Current ray bounce depth
       bool isDone;  // Whether the ray is done bouncing and thus ready for pixel color determination
-      vec3f color; // The final ray color that will be output
+      glm::vec3 color; // The final ray color that will be output
   };
 
   // launch parameters that are passed to the gpu
@@ -31,15 +30,15 @@ namespace spt {
   struct LaunchParams {
     struct {
       uint32_t *colorBuffer;
-      vec2i size;
+      glm::ivec2 size;
       int frameID;  // for accumulation later
     } frame;
 
     struct {
-      vec3f position;
-      vec3f direction;
-      vec3f horizontal;
-      vec3f vertical;
+      glm::vec3 position;
+      glm::vec3 direction;
+      glm::vec3 horizontal;
+      glm::vec3 vertical;
     } camera;
 
     int maxDepth;

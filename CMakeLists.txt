@@ -36,6 +36,12 @@ include_directories(${gdt_dir})
 add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 
 # ------------------------------------------------------------------
+# include GLM (replaces gdt math)
+# ------------------------------------------------------------------
+set(GLM_HEADER_ONLY ON)
+include_directories(${PROJECT_SOURCE_DIR}/common/3rdParty)
+
+# ------------------------------------------------------------------
 # build glfw
 # ------------------------------------------------------------------
 set(OpenGL_GL_PREFERENCE LEGACY)
