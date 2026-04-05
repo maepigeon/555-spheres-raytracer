@@ -291,6 +291,7 @@ void SampleRenderer::buildSBT() {
     rec.data.radius = s.radius;
     rec.data.emissionColor = s.emissionColor;
     rec.data.emissiveStrength = s.emissiveStrength;
+	rec.data.transparency = s.transparency;
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);

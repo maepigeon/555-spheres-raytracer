@@ -11,6 +11,7 @@ namespace spt {
     float emissiveStrength;
     glm::vec3 center;
     float radius;
+	float transparency;
   };
 
   struct RayData {

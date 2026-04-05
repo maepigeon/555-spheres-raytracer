@@ -71,10 +71,10 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
     const SphereSBTData &sbt = *(const SphereSBTData*)optixGetSbtDataPointer();
     RayData &rd = *(RayData*)getRayData<RayData>();
 
-     if (sbt.emissiveStrength > 0.f) {
-        rd.color += rd.attenuation * sbt.emissionColor * sbt.emissiveStrength;
-        rd.isDone = true;
-        return;
+    if (sbt.emissiveStrength > 0.f) {
+      rd.color += rd.attenuation * sbt.emissionColor * sbt.emissiveStrength;
+      rd.isDone = true;
+      return;
     }
 
     const glm::vec3 rayDir = make_glm_vec3(optixGetWorldRayDirection());
@@ -82,7 +82,43 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
     const glm::vec3 hitPoint = make_glm_vec3(optixGetWorldRayOrigin()) + (t * rayDir);
     const glm::vec3 Ng = glm::normalize(hitPoint - sbt.center);
 
-    rd.attenuation *= sbt.color;
+    if (sbt.transparency > 0.f) {
+        // Create a new ray object for testing whats on the other side of the sphere
+        RayData newRay = rd;
+        
+        // Create a pointer to the ray that we can pass to optixTrace
+        uint32_t u0, u1;
+        packPointer(&newRay, u0, u1);
+
+        // Default values
+        newRay.attenuation = glm::vec3(1.f, 1.f, 1.f);
+        newRay.depth = 0;
+        newRay.isDone = false;
+        newRay.color = glm::vec3(0.f);
+		//newRay.origin += (1e-3f * rayDir);
+
+        // Find where the ray exits the sphere
+        // Hacky method that only works when the objects are spaced apart enough
+		newRay.origin = hitPoint + ((2*sbt.radius + 1e-3f) * rayDir);
+
+        // Send out the new ray
+        while (!newRay.isDone && newRay.depth < optixLaunchParams.maxDepth) {
+            optixTrace(optixLaunchParams.traversable,
+                to_float3(newRay.origin), to_float3(newRay.direction),
+                1e-3f, 1e20f, 0.f,
+                OptixVisibilityMask(255),
+                OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                SURFACE_RAY_TYPE, RAY_TYPE_COUNT, SURFACE_RAY_TYPE,
+                u0, u1);
+        }
+
+        // Take a weighted average of the sphere's color and the ray's color
+        rd.attenuation *= (newRay.color * sbt.transparency) + (sbt.color * (1.f - sbt.transparency));
+    }
+    else {
+        rd.attenuation *= sbt.color;
+    }
+
     rd.origin = hitPoint;
     rd.direction = reflect(glm::normalize(rayDir), Ng);
     rd.depth++;
@@ -122,10 +158,9 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
                                               + (screenCoord.y - 0.5f) * camera.vertical);
 
 
+    uint32_t u0, u1;
+    packPointer(&rd, u0, u1);
     while (!rd.isDone && rd.depth < optixLaunchParams.maxDepth) {
-      uint32_t u0, u1;
-      packPointer(&rd, u0, u1);
-
       // https://raytracing-docs.nvidia.com/optix7/api/group__optix__device__api.html#ga11c7984d825b2a597e26a2a902386bbc
       // Initiates a ray tracing query starting with the given traversable handle and ray data.
       // The ray is traced through the scene graph until it either hits a geometry or misses the scene. 
