@@ -25,6 +25,10 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#ifndef M_PI
+#    define M_PI 3.14159265358979323846
+#endif
+
 /*! \namespace spt - Sphere Path Tracer */
 namespace spt {
 
