@@ -92,7 +92,7 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
 
         // Default values
         newRay.attenuation = glm::vec3(1.f, 1.f, 1.f);
-        newRay.depth = 0;
+        newRay.depth = rd.depth + 1;
         newRay.isDone = false;
         newRay.color = glm::vec3(0.f);
 		//newRay.origin += (1e-3f * rayDir);
