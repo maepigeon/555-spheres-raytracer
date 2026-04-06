@@ -59,12 +59,6 @@ namespace spt {
     optixReportIntersection(t, 0);
   }
 
-
-static __forceinline__ __device__
-glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
-    return v - 2.f * glm::dot(v, n) * n;
-}
-
   // Closest hit shader - simple lambertian shading without bounces
   // TODO: replace with path tracing logic supporting bounces and dielectric/metal materials
   extern "C" __global__ void __closesthit__radiance() {
@@ -95,7 +89,6 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
         newRay.depth = rd.depth + 1;
         newRay.isDone = false;
         newRay.color = glm::vec3(0.f);
-		//newRay.origin += (1e-3f * rayDir);
 
         // Find where the ray exits the sphere
         // Hacky method that only works when the objects are spaced apart enough
@@ -120,7 +113,7 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
     }
 
     rd.origin = hitPoint;
-    rd.direction = reflect(glm::normalize(rayDir), Ng);
+    rd.direction = glm::reflect(glm::normalize(rayDir), Ng);
     rd.depth++;
     
   
