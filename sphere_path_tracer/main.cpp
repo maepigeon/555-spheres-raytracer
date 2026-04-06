@@ -5,6 +5,10 @@
 #include <glm/glm.hpp>
 #include <chrono>
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 namespace spt {
 
   struct SampleWindow : public GLFCameraWindow {
@@ -13,10 +17,40 @@ namespace spt {
         sample(spheres),
         startTime(std::chrono::high_resolution_clock::now()) {
       sample.setCamera(camera);
+
+      // Setup Dear ImGui context
+      IMGUI_CHECKVERSION();
+      ImGui::CreateContext();
+      ImGuiIO& io = ImGui::GetIO();
+      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+
+      // GL 3.0 + GLSL 130
+      const char* glsl_version = "#version 130";
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+      // Setup Dear ImGui style
+      ImGui::StyleColorsDark();
+      ImGuiStyle& style = ImGui::GetStyle();
+
+      float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+      style.ScaleAllSizes(main_scale);        // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
+      style.FontScaleDpi = main_scale;        // Set initial font scale. (in docking branch: using io.ConfigDpiScaleFonts=true automatically overrides this for every window depending on the current monitor)
+
+      // Setup Platform/Renderer backends
+      ImGui_ImplGlfw_InitForOpenGL(handle, false);
+      ImGui_ImplOpenGL3_Init(glsl_version);
     }
 
     virtual void render() override {
+      static bool imgui_callbacks_installed = false;
+      if (!imgui_callbacks_installed) {
+        ImGui_ImplGlfw_InstallCallbacks(handle);
+        imgui_callbacks_installed = true;
+      }
+
       updateFrame();
+
       if (cameraFrame.modified) {
         sample.setCamera(Camera{ cameraFrame.get_cameraPosition(), cameraFrame.get_lookAt(), cameraFrame.get_sceneUpDirection() });
         cameraFrame.modified = false;
@@ -64,6 +98,23 @@ namespace spt {
       glTexCoord2f(1.f, 1.f); glVertex3f((float)framebufferSize.x, (float)framebufferSize.y, 0.f);
       glTexCoord2f(1.f, 0.f); glVertex3f((float)framebufferSize.x, 0.f,  0.f);
       glEnd();
+
+      // Start the Dear ImGui frame
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplGlfw_NewFrame();
+      ImGui::NewFrame();
+
+      ImGui::ShowDemoWindow();
+
+      ImGui::Begin("Control Panel");
+
+      ImGuiIO& io = ImGui::GetIO();
+      ImGui::Text("FPS: %.1f", io.Framerate);
+
+	  ImGui::End();
+
+      ImGui::Render();
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     virtual void resize(const glm::ivec2 &newSize) override {
@@ -83,15 +134,16 @@ namespace spt {
     try {
       std::vector<Sphere> spheres;
 
-      // center, radius, color, emissionColor, emissiveStrength, transparency, materialType
-      spheres.push_back({glm::vec3( 0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, MATERIAL_REFLECTIVE});
-      spheres.push_back({glm::vec3( -2.f, 3.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, MATERIAL_LAMBERTIAN});
-      spheres.push_back({glm::vec3( 0.f, 6.f, -3.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, MATERIAL_LAMBERTIAN});
+      // center, radius, color, emissionColor, emissiveStrength, transparency, refractiveIndex, materialType
+      spheres.push_back({glm::vec3( 0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.0f, MATERIAL_REFLECTIVE});
+      spheres.push_back({glm::vec3( -2.f, 3.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN});
+      spheres.push_back({glm::vec3( 0.f, 6.f, -3.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN});
+      spheres.push_back({glm::vec3(2.1f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.25f, MATERIAL_REFLECTIVE});
 
-      spheres.push_back({glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, MATERIAL_REFLECTIVE});
-      spheres.push_back({glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.25f, MATERIAL_REFLECTIVE});
-      spheres.push_back({glm::vec3( 100.f, 0.f, 0.f), 94.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, MATERIAL_LAMBERTIAN});
-      spheres.push_back({glm::vec3( 0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, MATERIAL_REFLECTIVE});
+      spheres.push_back({glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE});
+      spheres.push_back({glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 8.f, 1.0f, MATERIAL_REFLECTIVE}); // Transparency is bugged right now
+      spheres.push_back({glm::vec3( 100.f, 0.f, 0.f), 94.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN});
+      spheres.push_back({glm::vec3( 0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE});
 
 
  
