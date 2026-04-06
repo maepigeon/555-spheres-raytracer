@@ -107,6 +107,7 @@ OptixTraversableHandle SampleRenderer::buildAccel(const std::vector<Sphere> &sph
 
   uint64_t compactedSize;
   compactedSizeBuffer.download(&compactedSize, 1);
+  if (asBuffer.d_ptr) asBuffer.free();  // Free old allocation if it exists
   asBuffer.alloc(compactedSize);
   OPTIX_CHECK(optixAccelCompact(optixContext, 0, asHandle,
                                  asBuffer.d_pointer(), asBuffer.sizeInBytes,
@@ -346,11 +347,12 @@ void SampleRenderer::downloadPixels(uint32_t h_pixels[]) {
     colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
   }
 
-// Update sphere properties and rebuild the SBT and acceleration structure for changes to take effect
+// Update sphere properties and rebuild the SBT for changes to take effect
 void SampleRenderer::updateSpheres(const std::vector<Sphere> &updatedSpheres) {
-  CUDA_SYNC_CHECK();  // Ensure GPU finished with previous frame before modifying structures
+  CUDA_SYNC_CHECK();  // Ensure GPU finished with previous frame before modifying SBT
   spheres = updatedSpheres;
   launchParams.traversable = buildAccel(spheres);  // Rebuild acceleration structure for new geometry
-  buildSBT();  // Rebuild shader binding table for new sphere data
+
+  buildSBT();
 }
 } 

@@ -39,6 +39,7 @@ namespace spt {
     template<typename T>
     void alloc_and_upload(const std::vector<T> &vt)
     {
+      if (d_ptr) free();  // Free old allocation if it exists
       alloc(vt.size()*sizeof(T));
       upload((const T*)vt.data(),vt.size());
     }
