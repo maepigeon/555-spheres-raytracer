@@ -49,6 +49,9 @@ endif()
 include_directories(include)
 add_subdirectory(include/glfWindow EXCLUDE_FROM_ALL)
 
+# include imgui
+include_directories(${PROJECT_SOURCE_DIR}/include/3rdParty/imgui)
+
 
 # ------------------------------------------------------------------
 # and final build rules for the project

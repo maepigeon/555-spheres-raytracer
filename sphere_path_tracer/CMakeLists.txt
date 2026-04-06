@@ -14,6 +14,13 @@ add_executable(spherePathTracer_SBTData
   SphereRenderer.h
   SphereRenderer.cpp
   main.cpp
+  ../include/3rdParty/imgui/imgui.cpp
+  ../include/3rdParty/imgui/imgui_demo.cpp
+  ../include/3rdParty/imgui/imgui_draw.cpp
+  ../include/3rdParty/imgui/imgui_tables.cpp
+  ../include/3rdParty/imgui/imgui_widgets.cpp
+  ../include/3rdParty/imgui/backends/imgui_impl_glfw.cpp
+  ../include/3rdParty/imgui/backends/imgui_impl_opengl3.cpp
   )
 
 target_link_libraries(spherePathTracer_SBTData
