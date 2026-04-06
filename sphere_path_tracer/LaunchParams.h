@@ -18,7 +18,8 @@ namespace spt {
     float emissiveStrength;
     glm::vec3 center;
     float radius;
-	  float transparency;
+	float transparency;
+    float refractiveIndex;
     MaterialType materialType;
   };
 
@@ -52,6 +53,7 @@ namespace spt {
     } camera;
 
     int maxDepth;
+	float airRefractiveIndex;
     OptixTraversableHandle traversable;
   };
 
