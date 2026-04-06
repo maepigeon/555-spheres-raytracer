@@ -19,7 +19,7 @@ namespace spt {
       // Setup Dear ImGui context
       IMGUI_CHECKVERSION();
       ImGui::CreateContext();
-      ImGuiIO& io = ImGui::GetIO(); (void)io;
+      ImGuiIO& io = ImGui::GetIO();
       io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
       // GL 3.0 + GLSL 130
@@ -93,6 +93,13 @@ namespace spt {
 
       ImGui::ShowDemoWindow();
 
+      ImGui::Begin("Control Panel");
+
+      ImGuiIO& io = ImGui::GetIO();
+      ImGui::Text("FPS: %.1f", io.Framerate);
+
+	  ImGui::End();
+
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
@@ -113,11 +120,11 @@ namespace spt {
     try {
       std::vector<Sphere> spheres;
 
-      // center, radius, color, emissionColor, emissiveStrength
-      spheres.push_back({glm::vec3( 0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 1.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f});
-      spheres.push_back({glm::vec3( 2.f, 0.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f});
-      spheres.push_back({glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f});
-      spheres.push_back({glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.25f});
+	  // center, radius, color, emissionColor, emissiveStrength, transparency, refractiveIndex
+      spheres.push_back({glm::vec3( 0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 1.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.f});
+      spheres.push_back({glm::vec3( 2.f, 0.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), .25f, 1.f});
+      spheres.push_back({glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.f});
+      spheres.push_back({glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.33f});
 
       Camera camera = { glm::vec3(-3.f, 1.f, -4.f), glm::vec3( 0.f, 0.f,  0.f), glm::vec3( 0.f, 1.f,  0.f) };
 

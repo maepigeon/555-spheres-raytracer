@@ -12,6 +12,7 @@ namespace spt {
     glm::vec3 center;
     float radius;
 	float transparency;
+	float refractiveIndex;
   };
 
   struct RayData {
@@ -43,6 +44,7 @@ namespace spt {
     } camera;
 
     int maxDepth;
+	float airRefractiveIndex;
     OptixTraversableHandle traversable;
   };
 

@@ -20,6 +20,7 @@ namespace spt {
     float emissiveStrength;
     glm::vec3 emissionColor;
 	float transparency;
+	float refractiveIndex;
   };
 
   class SampleRenderer {

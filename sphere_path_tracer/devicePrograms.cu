@@ -85,14 +85,34 @@ namespace spt {
         packPointer(&newRay, u0, u1);
 
         // Default values
-        newRay.attenuation = glm::vec3(1.f, 1.f, 1.f);
-        newRay.depth = rd.depth + 1;
+        newRay.attenuation = rd.attenuation;//glm::vec3(1.f, 1.f, 1.f);
+        newRay.depth = rd.depth;
         newRay.isDone = false;
-        newRay.color = glm::vec3(0.f);
+        newRay.color = rd.color;// glm::vec3(0.f);
 
-        // Find where the ray exits the sphere
-        // Hacky method that only works when the objects are spaced apart enough
-		newRay.origin = hitPoint + ((2*sbt.radius + 1e-3f) * rayDir);
+        float ri = optixLaunchParams.airRefractiveIndex / sbt.refractiveIndex;
+		{ // Check if refraction is possible
+            float cos_theta = glm::min(glm::dot(rayDir * -1.f, Ng), 1.f);
+            float sin_theta = glm::sqrt(1.0 - cos_theta * cos_theta);
+
+            bool cannot_refract = ri * sin_theta > 1.0;
+
+            if (cannot_refract) {
+                // Reflect instead
+                // Using a goto to skip sending out a new ray
+                goto reflect;
+            }
+        }
+
+        // Calculate the new refracted direction
+        newRay.direction = glm::refract(glm::normalize(rayDir), Ng, ri);
+
+		// Find where the ray exits the sphere
+		float dist = -2.f * glm::dot(hitPoint - sbt.center, newRay.direction);
+		newRay.origin = hitPoint + ((dist + 1e-3f) * newRay.direction);
+
+		// Refract when exiting the sphere too. Commented out because I don't know if it's right
+        //newRay.direction = glm::refract(glm::normalize(newRay.direction), Ng, 1/ri);
 
         // Send out the new ray
         while (!newRay.isDone && newRay.depth < optixLaunchParams.maxDepth) {
@@ -106,9 +126,11 @@ namespace spt {
         }
 
         // Take a weighted average of the sphere's color and the ray's color
-        rd.attenuation *= (newRay.color * sbt.transparency) + (sbt.color * (1.f - sbt.transparency));
+        rd.color = (newRay.color * sbt.transparency) + (rd.color * (1.f - sbt.transparency));
+        rd.attenuation *= sbt.color * (1.f - sbt.transparency);
     }
     else {
+        reflect:
         rd.attenuation *= sbt.color;
     }
 

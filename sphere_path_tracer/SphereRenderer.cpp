@@ -39,6 +39,7 @@ SampleRenderer::SampleRenderer(const std::vector<Sphere> &spheres)
   std::cout << "building SBT" << std::endl;
   buildSBT();
   launchParamsBuffer.alloc(sizeof(launchParams));
+  launchParams.airRefractiveIndex = 1.f; // Putting this here for now
   std::cout << "#osc: fully set up" << std::endl;
 }
 
@@ -292,6 +293,7 @@ void SampleRenderer::buildSBT() {
     rec.data.emissionColor = s.emissionColor;
     rec.data.emissiveStrength = s.emissiveStrength;
 	rec.data.transparency = s.transparency;
+	rec.data.refractiveIndex = s.refractiveIndex;
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
