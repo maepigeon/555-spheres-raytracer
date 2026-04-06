@@ -39,7 +39,7 @@ SampleRenderer::SampleRenderer(const std::vector<Sphere> &spheres)
   std::cout << "building SBT" << std::endl;
   buildSBT();
   launchParamsBuffer.alloc(sizeof(launchParams));
-  std::cout << "#osc: fully set up" << std::endl;
+  std::cout << "fully set up" << std::endl;
 }
 
 OptixTraversableHandle SampleRenderer::buildAccel(const std::vector<Sphere> &spheres)
@@ -291,7 +291,8 @@ void SampleRenderer::buildSBT() {
     rec.data.radius = s.radius;
     rec.data.emissionColor = s.emissionColor;
     rec.data.emissiveStrength = s.emissiveStrength;
-	rec.data.transparency = s.transparency;
+	  rec.data.transparency = s.transparency;
+    rec.data.materialType = s.materialType; 
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
@@ -344,4 +345,12 @@ void SampleRenderer::resize(const glm::ivec2 &newSize) {
 void SampleRenderer::downloadPixels(uint32_t h_pixels[]) {
     colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
   }
+
+// Update sphere properties and rebuild the SBT and acceleration structure for changes to take effect
+void SampleRenderer::updateSpheres(const std::vector<Sphere> &updatedSpheres) {
+  CUDA_SYNC_CHECK();  // Ensure GPU finished with previous frame before modifying structures
+  spheres = updatedSpheres;
+  launchParams.traversable = buildAccel(spheres);  // Rebuild acceleration structure for new geometry
+  buildSBT();  // Rebuild shader binding table for new sphere data
+}
 } 

@@ -19,7 +19,8 @@ namespace spt {
     glm::vec3 color;
     float emissiveStrength;
     glm::vec3 emissionColor;
-	float transparency;
+	  float transparency;
+    MaterialType materialType;
   };
 
   class SampleRenderer {
@@ -29,6 +30,8 @@ namespace spt {
     void resize(const glm::ivec2 &newSize);
     void downloadPixels(uint32_t h_pixels[]);
     void setCamera(const Camera &camera);
+    void updateSpheres(const std::vector<Sphere> &updatedSpheres);
+    std::vector<Sphere>& getSpheres() { return spheres; }
 
   protected:
     void initOptix();
