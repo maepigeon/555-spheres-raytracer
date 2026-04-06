@@ -16,7 +16,11 @@ INSTALL GLFW (window API)
 
 BUILD
     mkdir build
+    
     cd build
+    
     cmake .. -DOptiX_ROOT_DIR=$OptiX_ROOT_DIR_77
+    
     make
+    
     spherePathTracer_SBTData
