@@ -1,4 +1,5 @@
 #include <optix_device.h>
+#include <curand_kernel.h>
 #include "LaunchParams.h"
 #include <glm/glm.hpp>
 
@@ -9,7 +10,7 @@ namespace spt {
 
   enum { SURFACE_RAY_TYPE=0, RAY_TYPE_COUNT };
 
-  // Helper functions to convert between float3 (OptiX) and glm::vec3
+  // Used to convert between float3 (OptiX) and glm::vec3
   __forceinline__ __device__ glm::vec3 make_glm_vec3(const float3 &v) {
     return glm::vec3(v.x, v.y, v.z);
   }
@@ -18,7 +19,11 @@ namespace spt {
     return make_float3(v.x, v.y, v.z);
   }
 
-  // Packs and unpacks 64-bit apointers into two 32-bit payload registers because optixTrace only supports 32-bit payloads.
+  static __forceinline__ __device__ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
+    return v - 2.f * glm::dot(v, n) * n;
+}
+
+  // Packs and unpacks 64-bit pointers into two 32-bit payload registers because optixTrace only supports 32-bit payloads.
   static __forceinline__ __device__
   void *unpackPointer(uint32_t i0, uint32_t i1) {
     const uint64_t uptr = static_cast<uint64_t>(i0) << 32 | i1;
@@ -33,6 +38,26 @@ namespace spt {
   template<typename T>
   static __forceinline__ __device__ T *getRayData() {
     return reinterpret_cast<T*>(unpackPointer(optixGetPayload_0(), optixGetPayload_1()));
+  }
+
+  __device__ glm::vec3 random_unit_vector(char *rngStateBytes) {
+    // Cast the char array to curandState_t pointer
+    curandState_t *rngState = (curandState_t*)rngStateBytes;
+    
+    while (true) {
+      // Generate random point in [-1, 1] cube using cuRAND
+      glm::vec3 p = glm::vec3(
+        curand_uniform(rngState) * 2.0f - 1.0f,
+        curand_uniform(rngState) * 2.0f - 1.0f,
+        curand_uniform(rngState) * 2.0f - 1.0f
+      );
+      
+      // Check if point is in unit sphere (rejection sampling)
+      float len_sq = glm::dot(p, p);
+      if (len_sq <= 1.0f) {
+        return glm::normalize(p);
+      }
+    }
   }
 
   //implicit sphere ray-intersection shader
@@ -60,17 +85,12 @@ namespace spt {
   }
 
 
-static __forceinline__ __device__
-glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
-    return v - 2.f * glm::dot(v, n) * n;
-}
-
-  // Closest hit shader - simple lambertian shading without bounces
-  // TODO: replace with path tracing logic supporting bounces and dielectric/metal materials
-  extern "C" __global__ void __closesthit__radiance() {
+// Closest hit shader - simple lambertian shading without bounces and reflective specular
+extern "C" __global__ void __closesthit__radiance() {
     const SphereSBTData &sbt = *(const SphereSBTData*)optixGetSbtDataPointer();
     RayData &rd = *(RayData*)getRayData<RayData>();
 
+    // Emmissive materials (light sources)
     if (sbt.emissiveStrength > 0.f) {
       rd.color += rd.attenuation * sbt.emissionColor * sbt.emissiveStrength;
       rd.isDone = true;
@@ -82,6 +102,7 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
     const glm::vec3 hitPoint = make_glm_vec3(optixGetWorldRayOrigin()) + (t * rayDir);
     const glm::vec3 Ng = glm::normalize(hitPoint - sbt.center);
 
+    // If material is transparent
     if (sbt.transparency > 0.f) {
         // Create a new ray object for testing whats on the other side of the sphere
         RayData newRay = rd;
@@ -95,11 +116,10 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
         newRay.depth = rd.depth + 1;
         newRay.isDone = false;
         newRay.color = glm::vec3(0.f);
-		//newRay.origin += (1e-3f * rayDir);
 
         // Find where the ray exits the sphere
         // Hacky method that only works when the objects are spaced apart enough
-		newRay.origin = hitPoint + ((2*sbt.radius + 1e-3f) * rayDir);
+		    newRay.origin = hitPoint + ((2*sbt.radius + 1e-3f) * rayDir);
 
         // Send out the new ray
         while (!newRay.isDone && newRay.depth < optixLaunchParams.maxDepth) {
@@ -111,22 +131,25 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
                 SURFACE_RAY_TYPE, RAY_TYPE_COUNT, SURFACE_RAY_TYPE,
                 u0, u1);
         }
-
         // Take a weighted average of the sphere's color and the ray's color
         rd.attenuation *= (newRay.color * sbt.transparency) + (sbt.color * (1.f - sbt.transparency));
+        rd.direction = reflect(glm::normalize(rayDir), Ng);
+        rd.origin = hitPoint + (1e-3f * Ng);
     }
-    else {
+
+    else if (sbt.materialType == MATERIAL_LAMBERTIAN) { // Lambertian (diffuse)
+        glm::vec3 randomVec = random_unit_vector(rd.rngState);
+        rd.direction = glm::normalize(Ng + randomVec);
         rd.attenuation *= sbt.color;
+        rd.origin = hitPoint + (1e-3f * Ng);
+    }
+    else { // Reflective (mirror)
+        rd.attenuation *= sbt.color;
+        rd.direction = reflect(glm::normalize(rayDir), Ng);
+        rd.origin = hitPoint + (1e-3f * Ng);
     }
 
-    rd.origin = hitPoint;
-    rd.direction = reflect(glm::normalize(rayDir), Ng);
     rd.depth++;
-    
-  
-
-    // simple lambertian shading for now — replace with BRDF for path tracing
-    //const float cosDN = fabsf(dot(rayDir, Ng));
   }
 
   extern "C" __global__ void __anyhit__radiance() { }
@@ -153,6 +176,11 @@ glm::vec3 reflect(const glm::vec3 &v, const glm::vec3 &n) {
     rd.depth = 0;
     rd.isDone = false;
     rd.color = glm::vec3(0.f);
+    
+    // Initialize curand state for this ray
+    curandState_t *rngState = (curandState_t*)rd.rngState;
+    curand_init(clock64() + ix * 1000000 + iy, 0, 0, rngState);
+    
     const glm::vec2 screenCoord (glm::vec2(ix+.5f, iy+.5f) / glm::vec2(optixLaunchParams.frame.size));
     rd.direction = glm::normalize(camera.direction + (screenCoord.x - 0.5f) * camera.horizontal
                                               + (screenCoord.y - 0.5f) * camera.vertical);

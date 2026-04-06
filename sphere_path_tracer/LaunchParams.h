@@ -4,25 +4,34 @@
 
 namespace spt {
 
-  // Completely reflective ray (Can later add roughness)
+  // Material types for spheres in the scene
+  enum MaterialType {
+    MATERIAL_REFLECTIVE = 0,   // Mirror-like specular reflection
+    MATERIAL_LAMBERTIAN = 1    // Diffuse Lambertian scattering
+  };
+
+  // Sphere object. SBT - Shader Binding Table - data for each sphere. 
+  // This is where we can store per-sphere data that we want to access in the ray tracing shaders
   struct SphereSBTData {
     glm::vec3 color;
     glm::vec3 emissionColor;
     float emissiveStrength;
     glm::vec3 center;
     float radius;
-	float transparency;
+	  float transparency;
+    MaterialType materialType;
   };
 
-  struct RayData {
+  struct __align__(16) RayData {
       glm::vec3 origin;
       glm::vec3 direction;
-      glm::vec3 attenuation; // How much the original light has been filtered by surfaces
-                        // that the ray has bounced on so far.
-                        // This is used to accumulate the final color of the ray.
+      glm::vec3 attenuation;  // How much the original light has been filtered by surfaces
+                              // that the ray has bounced on so far.
+                              // This is used to accumulate the final color of the ray.
       int depth;  // Current ray bounce depth
       bool isDone;  // Whether the ray is done bouncing and thus ready for pixel color determination
       glm::vec3 color; // The final ray color that will be output
+      char rngState[48];  // Cuda Random state for this ray, used for stochastic effects like diffuse scattering
   };
 
   // launch parameters that are passed to the gpu
