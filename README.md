@@ -15,6 +15,10 @@ INSTALL GLFW (window API)
      sudo apt install libglfw3-dev cmake-curses-gui
 
 BUILD
+    git pull
+
+    git submodule update --init --recursive
+
     mkdir build
     
     cd build
