@@ -39,7 +39,8 @@ SampleRenderer::SampleRenderer(const std::vector<Sphere> &spheres)
   std::cout << "building SBT" << std::endl;
   buildSBT();
   launchParamsBuffer.alloc(sizeof(launchParams));
-  launchParams.airRefractiveIndex = 1.f; // Putting this here for now
+  launchParams.airRefractiveIndex = 1.f;
+  launchParams.maxDepth = 8;
   std::cout << "fully set up" << std::endl;
 }
 
@@ -331,7 +332,6 @@ void SampleRenderer::setCamera(const Camera &camera) {
     normalize(cross(launchParams.camera.direction, camera.sceneUpDirection));
   launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
     launchParams.camera.direction));
-  launchParams.maxDepth   = 8;
 }
 
 // window resize logic - re-allocates color buffer and updates launch params with new buffer pointer and size
@@ -350,11 +350,16 @@ void SampleRenderer::downloadPixels(uint32_t h_pixels[]) {
   }
 
 // Update sphere properties and rebuild the SBT for changes to take effect
-void SampleRenderer::updateSpheres(const std::vector<Sphere> &updatedSpheres) {
+void SampleRenderer::updateSpheres() {
   CUDA_SYNC_CHECK();  // Ensure GPU finished with previous frame before modifying SBT
-  spheres = updatedSpheres;
   launchParams.traversable = buildAccel(spheres);  // Rebuild acceleration structure for new geometry
 
   buildSBT();
+}
+
+void SampleRenderer::updateSpheres(const std::vector<Sphere>& updatedSpheres) {
+    spheres = updatedSpheres;
+    
+	updateSpheres();
 }
 } 
