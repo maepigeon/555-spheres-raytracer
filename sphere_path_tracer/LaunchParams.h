@@ -53,7 +53,8 @@ namespace spt {
     } camera;
 
     int maxDepth;
-	float airRefractiveIndex;
+	  float airRefractiveIndex;
+    
     OptixTraversableHandle traversable;
   };
 

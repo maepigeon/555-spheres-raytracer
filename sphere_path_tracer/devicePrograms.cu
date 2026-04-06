@@ -118,7 +118,7 @@ extern "C" __global__ void __closesthit__radiance() {
         newRay.color = rd.color;// glm::vec3(0.f);
 
         float ri = optixLaunchParams.airRefractiveIndex / sbt.refractiveIndex;
-		{ // Check if refraction is possible
+		    { // Check if refraction is possible
             float cos_theta = glm::min(glm::dot(rayDir * -1.f, Ng), 1.f);
             float sin_theta = glm::sqrt(1.0 - cos_theta * cos_theta);
 
@@ -134,11 +134,11 @@ extern "C" __global__ void __closesthit__radiance() {
         // Calculate the new refracted direction
         newRay.direction = glm::refract(glm::normalize(rayDir), Ng, ri);
 
-		// Find where the ray exits the sphere
-		float dist = -2.f * glm::dot(hitPoint - sbt.center, newRay.direction);
-		newRay.origin = hitPoint + ((dist + 1e-3f) * newRay.direction);
+        // Find where the ray exits the sphere
+        float dist = -2.f * glm::dot(hitPoint - sbt.center, newRay.direction);
+        newRay.origin = hitPoint + ((dist + 1e-3f) * newRay.direction);
 
-		// Refract when exiting the sphere too. Commented out because I don't know if it's right
+        // Refract when exiting the sphere too. Commented out because I don't know if it's right
         //newRay.direction = glm::refract(glm::normalize(newRay.direction), Ng, 1/ri);
 
         // Send out the new ray
