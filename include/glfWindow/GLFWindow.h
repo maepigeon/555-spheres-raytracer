@@ -45,7 +45,7 @@ namespace spt {
     virtual void resize(const glm::ivec2 &newSize)
     { /* empty - to be subclassed by user */ }
 
-    virtual void key(int key, int mods)
+    virtual void key(int action, int key, int mods)
     {}
     
     /*! callback that window got resized */
@@ -305,8 +305,10 @@ namespace spt {
     // virtual void resize(const vec2i &newSize)
     // { /* empty - to be subclassed by user */ }
 
-    virtual void key(int key, int mods) override
+    virtual void key(int action, int key, int mods) override
     {
+      if (action != GLFW_PRESS)
+		return;
       switch(key) {
       case 'f':
       case 'F':

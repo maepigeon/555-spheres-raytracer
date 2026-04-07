@@ -10,6 +10,88 @@
 #include "backends/imgui_impl_opengl3.h"
 
 namespace spt {
+    void generateScene(std::vector<Sphere>& spheres, bool stressTest) {
+        spheres.clear();
+
+        if (stressTest) {
+            // center, radius, color, emissiveStrength, emissionColor, transparency, refractiveIndex, materialType
+            spheres.push_back({ glm::vec3(0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(-10.f, 15.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+
+            spheres.push_back({ glm::vec3(-1.f, -2.5f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+
+            // Glass
+            spheres.push_back({ glm::vec3(3.f, 0.f, -6.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 5.f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(2.f, 0.f, -4.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.9f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(2.f, 0.f, -2.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.5f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(2.f, 0.f, -0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.25f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(2.f, 0.f, 2.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.1f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(2.f, 0.f, 4.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 0.8f, MATERIAL_REFLECTIVE });
+
+            spheres.push_back({ glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 8.f, 1.0f, MATERIAL_REFLECTIVE }); // Transparency is bugged right now
+
+            //spheres.push_back({glm::vec3( 500.f, 0.f, 0.f), 450.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN});
+            spheres.push_back({ glm::vec3(0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+
+            for (int i = 0; i < 4000; i++) {
+                // A cylindrical wall of spheres with random positions, colors, and radii, with the rest of the scene at the center
+                float radiusCylinderOfSpheresInner = 50.f;
+                float radiusCylinderOfSpheresOuter = 100.f;
+                float heightCylinderOfSpheres = 200.f;
+                // Random float in range [0,1]
+                float rx = std::rand() / (float)RAND_MAX;
+                float ry = std::rand() / (float)RAND_MAX;
+                float rz = std::rand() / (float)RAND_MAX;
+
+                int randomMaterialRange = 4;
+                int material = std::rand() % randomMaterialRange;
+
+                float r1 = std::rand() / (float)RAND_MAX * 2. + 0.25f;
+                float radius = r1 * r1 * r1; // Square the radius to bias towards smaller spheres
+
+                glm::vec3 pos = glm::vec3(
+                    std::cos(rx * 2.f * 3.14159f) * (radiusCylinderOfSpheresInner + (radiusCylinderOfSpheresOuter - radiusCylinderOfSpheresInner) * ry),
+                    (rz * heightCylinderOfSpheres) - 25.f,
+                    std::sin(rx * 2.f * 3.14159f) * (radiusCylinderOfSpheresInner + (radiusCylinderOfSpheresOuter - radiusCylinderOfSpheresInner) * ry)
+                );
+                glm::vec3 color = glm::vec3(rx, ry, rz);
+                switch (material) {
+                case 0:
+                    spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+                    break;
+                case 1:
+                    spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+                    break;
+                case 2: { // emmissive, colored light sources
+                    float randombrightness = (std::rand() / (float)RAND_MAX) * 4.5f + 0.5f; // Random brightness
+                    spheres.push_back({ pos, radius, color, randombrightness, color, 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+                    break;
+                }
+                case 3: { // transparent spheres with random refractive indices
+                    float randomRefractiveIndex = (std::rand() / (float)RAND_MAX) * 4.f + 0.5f; // Random refractive index between 0.5 and 4.5
+                    spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 1.f, randomRefractiveIndex, MATERIAL_REFLECTIVE });
+                    break;
+                }
+                default:
+                    spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+                    break;
+                }
+            }
+        }
+        else {
+            // center, radius, color, emissionColor, emissiveStrength, transparency, refractiveIndex, materialType
+            spheres.push_back({ glm::vec3(0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(-2.f, 3.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+            spheres.push_back({ glm::vec3(0.f, 6.f, -3.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+            spheres.push_back({ glm::vec3(2.1f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.25f, MATERIAL_REFLECTIVE });
+
+            spheres.push_back({ glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), .2f, 1.0f, MATERIAL_REFLECTIVE });
+            spheres.push_back({ glm::vec3(100.f, 0.f, 0.f), 94.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
+            spheres.push_back({ glm::vec3(0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
+        }
+    }
 
   struct SampleWindow : public GLFCameraWindow {
     SampleWindow(const std::string &title, const std::vector<Sphere> &spheres, const Camera &camera, const float worldScale)
@@ -228,96 +310,59 @@ namespace spt {
       pixels.resize(newSize.x * newSize.y);
     }
 
+    virtual void key(int action, int key, int mods) override {
+		const float speed = 0.5f;
+
+		if (action == GLFW_PRESS && key == GLFW_KEY_F) {
+            // Switch to the other scene
+            stressTest = !stressTest;
+			generateScene(sample.getSpheres(), stressTest);
+
+			// Reset the camera position
+			cameraFrame.setOrientation(glm::vec3(-3.f, 1.f, -4.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+            cameraFrame.modified = true;
+            return;
+        }
+
+        if ((action == GLFW_PRESS) || (action == GLFW_REPEAT)) {
+            switch (key) {
+                case GLFW_KEY_W:
+                    cameraFrame.position -= cameraFrame.frame.vz * speed;
+                    break;
+                case GLFW_KEY_S:
+                    cameraFrame.position += cameraFrame.frame.vz * speed;
+                    break;
+                case GLFW_KEY_A:
+                    cameraFrame.position -= cameraFrame.frame.vx * speed;
+                    break;
+                case GLFW_KEY_D:
+                    cameraFrame.position += cameraFrame.frame.vx * speed;
+                    break;
+                case GLFW_KEY_SPACE:
+                    cameraFrame.position += cameraFrame.frame.vy * speed;
+                    break;
+                case GLFW_KEY_LEFT_SHIFT:
+                    cameraFrame.position -= cameraFrame.frame.vy * speed;
+                    break;
+			}
+
+            cameraFrame.modified = true;
+        }
+    }
+
     glm::ivec2 framebufferSize;
     GLuint fbTexture {0};
     SampleRenderer sample;
     std::vector<uint32_t> pixels;
     std::chrono::high_resolution_clock::time_point startTime;
+	bool stressTest = false;
   };
 
   extern "C" int main(int ac, char **av) {
     try {
       std::vector<Sphere> spheres;
       
-	  const bool stressTest = true;
-      if (stressTest) {
-          // center, radius, color, emissiveStrength, emissionColor, transparency, refractiveIndex, materialType
-          spheres.push_back({ glm::vec3(0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(-10.f, 15.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-
-          spheres.push_back({ glm::vec3(-1.f, -2.5f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-
-          // Glass
-          spheres.push_back({ glm::vec3(3.f, 0.f, -6.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 5.f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(2.f, 0.f, -4.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.9f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(2.f, 0.f, -2.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.5f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(2.f, 0.f, -0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.25f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(2.f, 0.f, 2.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.1f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(2.f, 0.f, 4.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 0.8f, MATERIAL_REFLECTIVE });
-
-          spheres.push_back({ glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 8.f, 1.0f, MATERIAL_REFLECTIVE }); // Transparency is bugged right now
-
-          //spheres.push_back({glm::vec3( 500.f, 0.f, 0.f), 450.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN});
-          spheres.push_back({ glm::vec3(0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-
-          for (int i = 0; i < 4000; i++) {
-              // A cylindrical wall of spheres with random positions, colors, and radii, with the rest of the scene at the center
-              float radiusCylinderOfSpheresInner = 50.f;
-              float radiusCylinderOfSpheresOuter = 100.f;
-              float heightCylinderOfSpheres = 200.f;
-              // Random float in range [0,1]
-              float rx = std::rand() / (float)RAND_MAX;
-              float ry = std::rand() / (float)RAND_MAX;
-              float rz = std::rand() / (float)RAND_MAX;
-
-              int randomMaterialRange = 4;
-              int material = std::rand() % randomMaterialRange;
-
-              float r1 = std::rand() / (float)RAND_MAX * 2. + 0.25f;
-              float radius = r1 * r1 * r1; // Square the radius to bias towards smaller spheres
-
-              glm::vec3 pos = glm::vec3(
-                  std::cos(rx * 2.f * 3.14159f) * (radiusCylinderOfSpheresInner + (radiusCylinderOfSpheresOuter - radiusCylinderOfSpheresInner) * ry),
-                  (rz * heightCylinderOfSpheres) - 25.f,
-                  std::sin(rx * 2.f * 3.14159f) * (radiusCylinderOfSpheresInner + (radiusCylinderOfSpheresOuter - radiusCylinderOfSpheresInner) * ry)
-              );
-              glm::vec3 color = glm::vec3(rx, ry, rz);
-              switch (material) {
-              case 0:
-                  spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-                  break;
-              case 1:
-                  spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-                  break;
-              case 2: { // emmissive, colored light sources
-                  float randombrightness = (std::rand() / (float)RAND_MAX) * 4.5f + 0.5f; // Random brightness
-                  spheres.push_back({ pos, radius, color, randombrightness, color, 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-                  break;
-              }
-              case 3: { // transparent spheres with random refractive indices
-                  float randomRefractiveIndex = (std::rand() / (float)RAND_MAX) * 4.f + 0.5f; // Random refractive index between 0.5 and 4.5
-                  spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 1.f, randomRefractiveIndex, MATERIAL_REFLECTIVE });
-                  break;
-              }
-              default:
-                  spheres.push_back({ pos, radius, color, 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-                  break;
-              }
-          }
-      } else {
-          // center, radius, color, emissionColor, emissiveStrength, transparency, refractiveIndex, materialType
-          spheres.push_back({ glm::vec3(0.f, 0.f, 0.f), 0.25f, glm::vec3(1.f, 1.f, 1.f), 100.0f, glm::vec3(0.9f, 0.9f, 1.0f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(-2.f, 3.f, 0.f), 0.75f, glm::vec3(.4f, .9f, .4f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-          spheres.push_back({ glm::vec3(0.f, 6.f, -3.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-          spheres.push_back({ glm::vec3(2.1f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 1.f, 1.25f, MATERIAL_REFLECTIVE });
-
-          spheres.push_back({ glm::vec3(-2.f, 0.f, 0.f), 0.75f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(0.f, 0.0f, 2.1f), 1.0f, glm::vec3(1.f, 1.f, 1.f), 0.f, glm::vec3(0.f), .2f, 1.0f, MATERIAL_REFLECTIVE });
-          spheres.push_back({ glm::vec3(100.f, 0.f, 0.f), 94.f, glm::vec3(.0f, .0f, .0f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_LAMBERTIAN });
-          spheres.push_back({ glm::vec3(0.f, -100.f, 0.f), 94.f, glm::vec3(0.75f, 1.f, 1.f), 0.f, glm::vec3(0.f), 0.f, 1.0f, MATERIAL_REFLECTIVE });
-	  }
-      
+	  generateScene(spheres, false);
 
       Camera camera = { glm::vec3(-3.f, 1.f, -4.f), glm::vec3( 0.f, 0.f,  0.f), glm::vec3( 0.f, 1.f,  0.f) };
 

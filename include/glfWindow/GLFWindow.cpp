@@ -71,9 +71,7 @@ namespace spt {
   {
     GLFWindow *gw = static_cast<GLFWindow*>(glfwGetWindowUserPointer(window));
     assert(gw);
-    if (action == GLFW_PRESS) {
-      gw->key(key,mods);
-    }
+    gw->key(action, key, mods);
   }
 
   /*! callback for _moving_ the mouse to a new position */
